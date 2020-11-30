@@ -1,7 +1,8 @@
 library(SASxport)
 library(dplyr)
 library(tidyverse)
-
+install.packages("ggcorrplot")
+library(ggcorrplot)
 data_dir <- "./data"
 setwd(data_dir)
 
@@ -105,10 +106,50 @@ data <- left_join(data, exam %>% select(SEQN, BMXBMI), by = "SEQN") %>%
                     rename(BMI = BMXBMI) %>% 
                     drop_na()
 
+# Add HDL_Cholesterol to the cleaned data and drop any rows with NULL values
+# 5205 observation left
+data$SEQN <- as.numeric(data$SEQN)
+lab3 <- read.xport("HDL_J.XPT")
+lab3$SEQN <- as.numeric(lab3$SEQN)
+data <- left_join(data, lab3 %>% select(SEQN, LBDHDD), by = "SEQN") %>% 
+  rename(HDL_Cholesterol = LBDHDD) %>% 
+  drop_na()
+
+#revalue "no diabetes" from 2 to 0
+data$diabetes[data$diabetes==2]<-0
+
+#linear regression
+fit <- lm(diabetes ~ marital_status+total_family_income+income_vs_poverty+
+household_income+gender+age+race+race_non_Hispanic_Asian+highest_edu+carbonhydrate+
+total_sugar+total_fat+sodium+diabetes+BMI+HDL_Cholesterol, data=data)
+summary(fit)
+
+
+data$diabetes <- factor(data$diabetes)
+mylogit <- glm(diabetes ~ marital_status+total_family_income+income_vs_poverty+
+                 household_income+gender+age+race+race_non_Hispanic_Asian+highest_edu+carbonhydrate+
+                 total_sugar+total_fat+sodium+diabetes+BMI+HDL_Cholesterol, data = data, family = "binomial")
+summary(mylogit)
+#trying scatter plot
+data$diabetes <- as.numeric(data$diabetes)
+ggplot(data, aes(x=age, y=BMI, color = diabetes)) + geom_point()
+#correlation plot
+r <- cor(data, use="complete.obs")
+ggcorrplot(r)
+
 
 # Laboratory
 # Runting
-
+# lab1 <- read.xport("CRCO_J.XPT")
+# lab1 <- lab1 %>% select(SEQN, LBXBCR, LBXBCO) %>% rename(Chromium = LBXBCR, Cobalt = LBXBCO)
+# lab2 <- read.xport("INS_J.XPT")
+# lab2 <- lab2 %>% select(SEQN, LBXIN) %>% rename(Insulin = LBXIN)
+# lab3 <- read.xport("HDL_J.XPT")
+# lab3 <- lab3 %>% select(SEQN, LBDHDD) %>% rename(HDL_Cholesterol = LBDHDD)
+# lab <- full_join(lab1, lab2, by = "SEQN")
+# lab <- lab %>% full_join(lab3, by = "SEQN")
+# head(lab)
+#print(class(lab3$SEQN) == class(lab$SEQN))
 # Tasks: data cleaning, data visualization
 
 # # drop RIDEXPRG
@@ -142,3 +183,4 @@ data <- left_join(data, exam %>% select(SEQN, BMXBMI), by = "SEQN") %>%
 # 
 # library(ltm)
 # biserial.cor(test$DR1TSUGR, test$DIQ010)
+
