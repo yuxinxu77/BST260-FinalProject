@@ -1,7 +1,6 @@
 library(SASxport)
 library(dplyr)
 library(tidyverse)
-install.packages("ggcorrplot")
 library(ggcorrplot)
 data_dir <- "./data"
 setwd(data_dir)
@@ -16,18 +15,18 @@ dat_t <- read.xport("DIQ_J.XPT")
 
 
 # select useful columns and rename column names
-diet_1 <- diet_1 %>% select(SEQN, DR1TCARB, DR1TSUGR, DR1TTFAT, DR1TSODI) %>% rename('carbonhydrate1' = 'DR1TCARB', 'total_sugar1' = 'DR1TSUGR', 'total_fat1' = 'DR1TTFAT', 'sodium1' = 'DR1TSODI')
-diet_2 <- diet_2 %>% select(SEQN, DR2TCARB, DR2TSUGR, DR2TTFAT, DR2TSODI) %>% rename('carbonhydrate2' = 'DR2TCARB', 'total_sugar2' = 'DR2TSUGR', 'total_fat2' = 'DR2TTFAT', 'sodium2' = 'DR2TSODI')
+diet_1 <- diet_1 %>% select(SEQN, DR1TKCAL, DR1TCARB, DR1TSUGR, DR1TTFAT, DR1TSODI) %>% rename('energy1' = 'DR1TKCAL', 'carbonhydrate1' = 'DR1TCARB', 'total_sugar1' = 'DR1TSUGR', 'total_fat1' = 'DR1TTFAT', 'sodium1' = 'DR1TSODI')
+diet_2 <- diet_2 %>% select(SEQN, DR2TKCAL, DR2TCARB, DR2TSUGR, DR2TTFAT, DR2TSODI) %>% rename('energy2' = 'DR2TKCAL', 'carbonhydrate2' = 'DR2TCARB', 'total_sugar2' = 'DR2TSUGR', 'total_fat2' = 'DR2TTFAT', 'sodium2' = 'DR2TSODI')
 dat_t <- dat_t %>% select(SEQN, DIQ010) %>% rename('diabetes' = 'DIQ010') %>% drop_na()
 
-# check that within diet_1 and diet_2, each row with na will have exactly four na
+# check that within diet_1 and diet_2, each row with na will have exactly 5 na
 # diet_1_na <- rowSums(is.na(diet_1))
 # diet_2_na <- rowSums(is.na(diet_2))
 
-# use the following 2 lines of code to test if each row with na has exactly 4 na.
+# use the following 2 lines of code to test if each row with na has exactly 5 na.
 # turns out that this is true for both diet_1 and diet_2
-# which(0 < diet_1_na  & diet_1_na < 4 )
-# which(0 < diet_2_na  & diet_2_na < 4 )
+# which(0 < diet_1_na  & diet_1_na < 5 )
+# which(0 < diet_2_na  & diet_2_na < 5 )
 
 # now we can go ahead and full_join diet_1 and diet_2
 dat <- full_join(diet_1, diet_2, by = 'SEQN')
@@ -52,12 +51,13 @@ dat <- full_join(diet_1, diet_2, by = 'SEQN')
 # use the value of one day if only data from that day exist,
 # and delete the rows with all empty values except for id column.
 
+dat <- dat %>% mutate(energy = ifelse((!is.na(energy1)) & (!is.na(energy2)), (energy1 + energy2)/2.0, ifelse(is.na(energy1), energy2, energy1)))
 dat <- dat %>% mutate(carbonhydrate = ifelse((!is.na(carbonhydrate1)) & (!is.na(carbonhydrate2)), (carbonhydrate1 + carbonhydrate2)/2.0, ifelse(is.na(carbonhydrate1), carbonhydrate2, carbonhydrate1)))
 dat <- dat %>% mutate(total_sugar = ifelse((!is.na(total_sugar1)) & (!is.na(total_sugar2)), (total_sugar1 + total_sugar2)/2.0, ifelse(is.na(total_sugar1), total_sugar2, total_sugar1)))
 dat <- dat %>% mutate(total_fat = ifelse((!is.na(total_fat1)) & (!is.na(total_fat2)), (total_fat1 + total_fat2)/2.0, ifelse(is.na(total_fat1), total_fat2, total_fat1)))
 dat <- dat %>% mutate(sodium = ifelse((!is.na(sodium1)) & (!is.na(sodium2)), (sodium1 + sodium2)/2.0, ifelse(is.na(sodium1), sodium2, sodium1)))
 
-dat <- dat %>% select(SEQN, carbonhydrate, total_sugar, total_fat, sodium) %>% drop_na()
+dat <- dat %>% select(SEQN, energy, carbonhydrate, total_sugar, total_fat, sodium) %>% drop_na()
 
 # now dat only has 7495 rows, less than the original 8704 rows by 1209 rows
 # that's exactly the expected number of empty rows
@@ -120,14 +120,14 @@ data$diabetes[data$diabetes==2]<-0
 
 #linear regression
 fit <- lm(diabetes ~ marital_status+total_family_income+income_vs_poverty+
-household_income+gender+age+race+race_non_Hispanic_Asian+highest_edu+carbonhydrate+
+household_income+gender+age+race+race_non_Hispanic_Asian+highest_edu+energy+carbonhydrate+
 total_sugar+total_fat+sodium+diabetes+BMI+HDL_Cholesterol, data=data)
 summary(fit)
 
 
 data$diabetes <- factor(data$diabetes)
 mylogit <- glm(diabetes ~ marital_status+total_family_income+income_vs_poverty+
-                 household_income+gender+age+race+race_non_Hispanic_Asian+highest_edu+carbonhydrate+
+                 household_income+gender+age+race+race_non_Hispanic_Asian+highest_edu+energy+carbonhydrate+
                  total_sugar+total_fat+sodium+diabetes+BMI+HDL_Cholesterol, data = data, family = "binomial")
 summary(mylogit)
 #trying scatter plot
