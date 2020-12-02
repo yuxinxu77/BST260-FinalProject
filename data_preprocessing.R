@@ -75,15 +75,15 @@ dat <- dat %>% filter(diabetes == 1 | diabetes == 2)
 # merge DMDEDUC2, DMDEDUC3
 # get rid of na value in DMDMARTL
 demo <- read.xport("DEMO_J.XPT")
-demo_clean <- demo %>% select(SEQN, DMDEDUC2, DMDEDUC3, DMDMARTL, INDFMIN2, INDFMPIR, 
+demo_clean <- demo %>% select(SEQN, DMDEDUC2, DMDMARTL, INDFMIN2, INDFMPIR, 
                               INDHHIN2, RIAGENDR, RIDAGEYR, RIDRETH1, RIDRETH3) %>%
-                        rename(highest_edu1 = DMDEDUC2, highest_edu2 = DMDEDUC3, 
+                        rename(highest_edu = DMDEDUC2, 
                                marital_status = DMDMARTL, total_family_income = INDFMIN2,
                                income_vs_poverty = INDFMPIR, household_income = INDHHIN2,
-                               gender = RIAGENDR,  age = RIDAGEYR, race = RIDRETH1,
-                               race_non_Hispanic_Asian= RIDRETH3)
+                               gender = RIAGENDR,  age = RIDAGEYR, 
+                               race = RIDRETH3)
 # If DMDEDUC2 has value, use values from DMDEDUC2, else use value from DMDEDUC3
-demo_clean <- demo_clean %>% mutate(highest_edu = ifelse(is.na(highest_edu1) == FALSE, highest_edu1, highest_edu2)) %>%
+#demo_clean <- demo_clean %>% mutate(highest_edu = ifelse(is.na(highest_edu1) == FALSE, highest_edu1, highest_edu2)) %>%
                               select(-c(highest_edu1, highest_edu2))
 
 # Assgin marital status with values 77-Refused, 99-Don't Know, and NA to 0-Not Specified
@@ -136,6 +136,43 @@ ggplot(data, aes(x=age, y=BMI, color = diabetes)) + geom_point()
 #correlation plot
 r <- cor(data, use="complete.obs")
 ggcorrplot(r)
+
+
+#pie chart
+pie_chart<- function(diab, cat, level) {
+  pie_dat <- as.data.frame(table(data %>% filter(diabetes ==diab)%>%select(cat)))%>%rename(cat = Var1)
+  pie_dat $ cat<- level
+  ggplot(pie_dat, aes(x="", y=Freq, fill=cat)) +
+    geom_bar(stat="identity", width=1) +
+    coord_polar("y", start=0)
+}
+
+cats <- c("hightest_edu", "marital_status", "gender", "race")
+level_edu <- c("Less than 9th grade","9-11th grade (Includes 12th grade with no diploma)",
+               "High school graduate/GED or equivalent",	
+               "Some college or AA degree",
+               "College graduate or above",
+               "Refused",
+               "Don't Know")
+level_marital <- c("Married", "Widowed", "Divorced", "Separated", "Never married",
+                   "Living with partner", "Refused")	
+level_gender <- c("Male", "Female")
+
+level_race <- c("Mexican American",		
+                "Other Hispanic",	
+                "Non-Hispanic White",	
+                "Non-Hispanic Black",	
+                "Non-Hispanic Asian",	
+                "Other Race - Including Multi-Racial")
+
+pie_chart(0, "highest_edu", level_edu[-6])
+pie_chart(1,"highest_edu", level_edu)
+pie_chart(0, "marital_status", level_marital[-7])
+pie_chart(1, "marital_status", level_marital)
+pie_chart(0, "gender", level_gender)
+pie_chart(1, "gender", level_gender)
+pie_chart(0, "race", level_race)
+pie_chart(1, "race", level_race)
 
 
 # Laboratory
