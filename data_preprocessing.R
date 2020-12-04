@@ -137,6 +137,10 @@ ggplot(data, aes(x=age, y=BMI, color = diabetes)) + geom_point()
 r <- cor(data, use="complete.obs")
 ggcorrplot(r)
 
+#revalue "no diabetes" from 1 to 0， and “diabetes” from 2 to 1
+data$diabetes[data$diabetes==1] <- 0
+data$diabetes[data$diabetes==2] <- 1
+
 
 #pie chart
 pie_chart<- function(diab, cat, level) {
@@ -173,6 +177,255 @@ pie_chart(0, "gender", level_gender)
 pie_chart(1, "gender", level_gender)
 pie_chart(0, "race", level_race)
 pie_chart(1, "race", level_race)
+
+
+
+# back to back histogram: age
+level_age <- c("[0-10)","[10-20)", "[20-30)", "[30-40)", "[40-50)", "[50-60)","[60-70)", "[70-80)","[80-90)", "[90-100)")
+d_age <- data %>% select(age, diabetes) %>% 
+  mutate(age_tag = case_when(
+    age < 10 ~ level_age[1],
+    age >= 10 & age < 20 ~ level_age[2],
+    age >= 20 & age < 30 ~ level_age[3],
+    age >= 30 & age < 40 ~ level_age[4],
+    age >= 40 & age < 50 ~ level_age[5],
+    age >= 50 & age < 60 ~ level_age[6],
+    age >= 60 & age < 70 ~ level_age[7],
+    age >= 70 & age < 80 ~ level_age[8],
+    age >= 80 & age < 90 ~ level_age[9])) %>% 
+  group_by(age_tag, diabetes) %>% 
+  summarise(percentage = n()) %>% 
+  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
+  mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
+
+# plot
+age <- d_age %>% 
+  ggplot(aes(x = age_tag, y = percentage, group = diabetes, fill = diabetes)) +
+  geom_bar(stat = "identity", width = 0.75) +
+  coord_flip() +
+  scale_x_discrete(limits = level_age) +
+  # another trick!
+  scale_y_continuous(limits = c(-1, 1),
+                     breaks = seq(-1, 1, 0.1), 
+                     labels = abs(seq(-1 , 1, 0.1))) +
+  labs(x = "Age (years)", y = "Percentage", title = "Age-Diabetes Distribution Comparison") +
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        panel.background = element_rect(fill =  "grey90")) +
+  scale_fill_manual(values=c("red", "blue"),
+                    name="",
+                    breaks=c("Has Diabetes", "No Diabetes"),
+                    labels=c("Has Diabetes", "No Diabetes")) 
+
+print(age)
+
+# back to back histogram: energy
+level_energy <- c("[0-1000)","[1000-2000)", "[2000-3000)", "[3000-4000)", "[4000-5000)", "[5000-6000)","[6000-7000)", "[7000-8000)","[8000-9000)")
+d_energy <- data %>% select(energy, diabetes) %>% 
+  mutate(energy_tag = case_when(
+    energy < 1000 ~ level_energy[1],
+    energy >= 1000 & energy < 2000 ~ level_energy[2],
+    energy >= 2000 & energy < 3000 ~ level_energy[3],
+    energy >= 3000 & energy < 4000 ~ level_energy[4],
+    energy >= 4000 & energy < 5000 ~ level_energy[5],
+    energy >= 5000 & energy < 6000 ~ level_energy[6],
+    energy >= 6000 & energy < 7000 ~ level_energy[7],
+    energy >= 7000 & energy < 8000 ~ level_energy[8],
+    energy >= 8000 & energy < 9000 ~ level_energy[9])) %>% 
+  group_by(energy_tag, diabetes) %>% 
+  summarise(percentage = n()) %>% 
+  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
+  mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
+
+# plot
+energy <- d_energy %>% 
+  ggplot(aes(x = energy_tag, y = percentage, group = diabetes, fill = diabetes)) +
+  geom_bar(stat = "identity", width = 0.75) +
+  coord_flip() +
+  scale_x_discrete(limits = level_energy) +
+  # another trick!
+  scale_y_continuous(limits = c(-1, 1),
+                     breaks = seq(-1, 1, 0.1), 
+                     labels = abs(seq(-1 , 1, 0.1))) +
+  labs(x = "Energy (kcal)", y = "Percentage", title = "Daily Energy Intake - Diabetes Distribution Comparison") +
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        panel.background = element_rect(fill =  "grey90")) +
+  scale_fill_manual(values=c("red", "blue"),
+                    name="",
+                    breaks=c("Has Diabetes", "No Diabetes"),
+                    labels=c("Has Diabetes", "No Diabetes")) 
+
+print(energy)
+
+# back to back histogram: carbonhydrate
+level_carb <- c("[0-100)","[100-200)", "[200-300)", "[300-400)", "[400-500)", "[500-600)","[600-700)", "[700-800)","[800-900)", "[900-1000)", "[1000-1100)")
+d_carb <- data %>% select(carbonhydrate, diabetes) %>% 
+  mutate(carb_tag = case_when(
+    carbonhydrate < 100 ~ level_carb[1],
+    carbonhydrate >= 100 & carbonhydrate < 200 ~ level_carb[2],
+    carbonhydrate >= 200 & carbonhydrate < 300 ~ level_carb[3],
+    carbonhydrate >= 300 & carbonhydrate < 400 ~ level_carb[4],
+    carbonhydrate >= 400 & carbonhydrate < 500 ~ level_carb[5],
+    carbonhydrate >= 500 & carbonhydrate < 600 ~ level_carb[6],
+    carbonhydrate >= 600 & carbonhydrate < 700 ~ level_carb[7],
+    carbonhydrate >= 700 & carbonhydrate < 800 ~ level_carb[8],
+    carbonhydrate >= 800 & carbonhydrate < 900 ~ level_carb[9],
+    carbonhydrate >= 900 & carbonhydrate < 1000 ~ level_carb[10],
+    carbonhydrate >= 1000 & carbonhydrate < 1100 ~ level_carb[11])) %>% 
+  group_by(carb_tag, diabetes) %>% 
+  summarise(percentage = n()) %>% 
+  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
+  mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
+
+# plot
+carb <- d_carb %>% 
+  ggplot(aes(x = carb_tag, y = percentage, group = diabetes, fill = diabetes)) +
+  geom_bar(stat = "identity", width = 0.75) +
+  coord_flip() +
+  scale_x_discrete(limits = level_carb) +
+  # another trick!
+  scale_y_continuous(limits = c(-1, 1),
+                     breaks = seq(-1, 1, 0.1), 
+                     labels = abs(seq(-1 , 1, 0.1))) +
+  labs(x = "Carbonhydrate (gm)", y = "Percentage", title = "Daily Carbonhydrate Intake - Diabetes Distribution Comparison") +
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        panel.background = element_rect(fill =  "grey90")) +
+  scale_fill_manual(values=c("red", "blue"),
+                    name="",
+                    breaks=c("Has Diabetes", "No Diabetes"),
+                    labels=c("Has Diabetes", "No Diabetes")) 
+
+print(carb)
+
+
+# back to back histogram: sugar
+level_sugar <- c("[0-100)","[100-200)", "[200-300)", "[300-400)", "[400-500)", "[500-600)","[600-700)", "[700-800)","[800-900)", "[900-1000)")
+d_sugar <- data %>% select(total_sugar, diabetes) %>% 
+  mutate(sugar_tag = case_when(
+    total_sugar < 100 ~ level_sugar[1],
+    total_sugar >= 100 & total_sugar < 200 ~ level_sugar[2],
+    total_sugar >= 200 & total_sugar < 300 ~ level_sugar[3],
+    total_sugar >= 300 & total_sugar < 400 ~ level_sugar[4],
+    total_sugar >= 400 & total_sugar < 500 ~ level_sugar[5],
+    total_sugar >= 500 & total_sugar < 600 ~ level_sugar[6],
+    total_sugar >= 600 & total_sugar < 700 ~ level_sugar[7],
+    total_sugar >= 700 & total_sugar < 800 ~ level_sugar[8],
+    total_sugar >= 800 & total_sugar < 900 ~ level_sugar[9],
+    total_sugar >= 900 & total_sugar < 1000 ~ level_sugar[10])) %>% 
+  group_by(sugar_tag, diabetes) %>% 
+  summarise(percentage = n()) %>% 
+  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
+  mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
+
+# plot
+sugar <- d_sugar %>% 
+  ggplot(aes(x = sugar_tag, y = percentage, group = diabetes, fill = diabetes)) +
+  geom_bar(stat = "identity", width = 0.75) +
+  coord_flip() +
+  scale_x_discrete(limits = level_sugar) +
+  # another trick!
+  scale_y_continuous(limits = c(-1, 1),
+                     breaks = seq(-1, 1, 0.1), 
+                     labels = abs(seq(-1 , 1, 0.1))) +
+  labs(x = "Total Sugar (gm)", y = "Percentage", title = "Daily Sugar Intake - Diabetes Distribution Comparison") +
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        panel.background = element_rect(fill =  "grey90")) +
+  scale_fill_manual(values=c("red", "blue"),
+                    name="",
+                    breaks=c("Has Diabetes", "No Diabetes"),
+                    labels=c("Has Diabetes", "No Diabetes")) 
+
+print(sugar)
+
+# back to back histogram: fat
+level_fat <- c("[0-50)","[50-100)", "[100-150)", "[150-200)", "[200-250)", "[250-300)","[300-350)", "[350-400)")
+d_fat <- data %>% select(total_fat, diabetes) %>% 
+  mutate(fat_tag = case_when(
+    total_fat < 50 ~ level_fat[1],
+    total_fat >= 50 & total_fat < 100 ~ level_fat[2],
+    total_fat >= 100 & total_fat < 150 ~ level_fat[3],
+    total_fat >= 150 & total_fat < 200 ~ level_fat[4],
+    total_fat >= 200 & total_fat < 250 ~ level_fat[5],
+    total_fat >= 250 & total_fat < 300 ~ level_fat[6],
+    total_fat >= 300 & total_fat < 350 ~ level_fat[7],
+    total_fat >= 350 & total_fat < 400 ~ level_fat[8])) %>% 
+  group_by(fat_tag, diabetes) %>% 
+  summarise(percentage = n()) %>% 
+  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
+  mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
+
+# plot
+fat <- d_fat %>% 
+  ggplot(aes(x = fat_tag, y = percentage, group = diabetes, fill = diabetes)) +
+  geom_bar(stat = "identity", width = 0.75) +
+  coord_flip() +
+  scale_x_discrete(limits = level_fat) +
+  # another trick!
+  scale_y_continuous(limits = c(-1, 1),
+                     breaks = seq(-1, 1, 0.1), 
+                     labels = abs(seq(-1 , 1, 0.1))) +
+  labs(x = "Total Fat (gm)", y = "Percentage", title = "Daily Fat Intake - Diabetes Distribution Comparison") +
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        panel.background = element_rect(fill =  "grey90")) +
+  scale_fill_manual(values=c("red", "blue"),
+                    name="",
+                    breaks=c("Has Diabetes", "No Diabetes"),
+                    labels=c("Has Diabetes", "No Diabetes")) 
+
+print(fat)
+
+# back to back histogram: sodium
+level_sodium <- c("[0-2000)","[2000-4000)", "[4000-6000)", "[6000-8000)", "[8000-10000)", "[10000-12000)","[12000-14000)", "[14000-16000)","[16000-18000)", "[18000-20000)", "[20000-22000)", "[22000-24000)", "[24000-26000)")
+d_sodium <- data %>% select(sodium, diabetes) %>% 
+  mutate(sodium_tag = case_when(
+    sodium < 2000 ~ level_sodium[1],
+    sodium >= 2000 & sodium < 4000 ~ level_sodium[2],
+    sodium >= 4000 & sodium < 6000 ~ level_sodium[3],
+    sodium >= 6000 & sodium < 8000 ~ level_sodium[4],
+    sodium >= 8000 & sodium < 10000 ~ level_sodium[5],
+    sodium >= 10000 & sodium < 12000 ~ level_sodium[6],
+    sodium >= 12000 & sodium < 14000 ~ level_sodium[7],
+    sodium >= 14000 & sodium < 16000 ~ level_sodium[8],
+    sodium >= 16000 & sodium < 18000 ~ level_sodium[9],
+    sodium >= 18000 & sodium < 20000 ~ level_sodium[10],
+    sodium >= 20000 & sodium < 22000 ~ level_sodium[11],
+    sodium >= 22000 & sodium < 24000 ~ level_sodium[12],
+    sodium >= 24000 & sodium < 26000 ~ level_sodium[13])) %>% 
+  group_by(sodium_tag, diabetes) %>% 
+  summarise(percentage = n()) %>% 
+  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
+  mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
+
+# plot
+sodium <- d_sodium %>% 
+  ggplot(aes(x = sodium_tag, y = percentage, group = diabetes, fill = diabetes)) +
+  geom_bar(stat = "identity", width = 0.75) +
+  coord_flip() +
+  scale_x_discrete(limits = level_sodium) +
+  # another trick!
+  scale_y_continuous(limits = c(-1, 1),
+                     breaks = seq(-1, 1, 0.1), 
+                     labels = abs(seq(-1 , 1, 0.1))) +
+  labs(x = "Total Sodium (mg)", y = "Percentage", title = "Daily Sodium Intake - Diabetes Distribution Comparison") +
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        panel.background = element_rect(fill =  "grey90")) +
+  scale_fill_manual(values=c("red", "blue"),
+                    name="",
+                    breaks=c("Has Diabetes", "No Diabetes"),
+                    labels=c("Has Diabetes", "No Diabetes")) 
+
+print(sodium)
 
 
 # Laboratory
