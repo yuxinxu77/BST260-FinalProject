@@ -520,7 +520,6 @@ data_onehot <- data %>% select(-c("SEQN")) %>%
                                         ifelse(total_family_income == 14, 11, 12), total_family_income)) %>%
     mutate(highest_edu = as.factor(highest_edu), 
            marital_status = as.factor(marital_status), 
-           gender = as.factor(gender),
            race = as.factor(race)) 
 data_onehot <- one_hot(data.table(data_onehot))
 ```
