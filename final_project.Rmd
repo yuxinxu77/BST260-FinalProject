@@ -106,6 +106,12 @@ data <- left_join(data, lab3 %>% select(SEQN, LBDHDD), by = "SEQN") %>%
 data$diabetes[data$diabetes==2]<-0
 ```
 
+## Remove extremely infrequent categorical value
+```{r}
+data <- data %>% filter(highest_edu != 7 & highest_edu != 9 & marital_status != 0)
+```
+
+
 # Data Visualization
 ## Pie Chart
 ```{r}
@@ -122,11 +128,9 @@ cats <- c("hightest_edu", "marital_status", "gender", "race", "total_family_inco
 level_edu <- c("Less than 9th grade","9-11th grade (Includes 12th grade with no diploma)",
                "High school graduate/GED or equivalent",	
                "Some college or AA degree",
-               "College graduate or above",
-               "Refused",
-               "Don't Know")
+               "College graduate or above")
 level_marital <- c("Married", "Widowed", "Divorced", "Separated", "Never married",
-                   "Living with partner", "Refused")	
+                   "Living with partner")	
 level_gender <- c("Male", "Female")
 
 level_race <- c("Mexican American",		
@@ -527,7 +531,7 @@ data_onehot <- one_hot(data.table(data_onehot))
 ## Train-test split
 ```{r}
 library(caret)
-train_index <- createDataPartition(y, times = 1, p = 0.8, list = FALSE)
+train_index <- createDataPartition(data_onehot$diabetes, times = 1, p = 0.8, list = FALSE)
 train_set <- data_onehot[train_index, ]
 test_set <- data_onehot[-train_index, ]
 X_train <- train_set %>% select(-c(diabetes))
@@ -536,13 +540,43 @@ X_test <- test_set %>% select(-c(diabetes))
 y_test <- test_set$diabetes
 ```
 
+```{r}
+table(data$highest_edu)
+table(data$marital_status)
+table(data$gender)
+table(data$race)
+```
+
 ## PCA
 ```{r}
+# Install the package if needed
+# Run full PCA to select principle components
 # install.packages("factoextra")
 library(factoextra)
+library("corrplot")
+pca_full <- prcomp(X_train, scale = TRUE)
+summary(pca_full)
+fviz_eig(pca_full)
+fviz_pca_var(pca_full,
+             col.var = "contrib", # Color by contributions to the PC
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE     # Avoid text overlapping
+             )
 
+corrplot(get_pca(pca_full)$cos2, is.corr=FALSE)
 
 ```
+```{r}
+# Run pca on selected number of priciple components
+pca_part <- prcomp(X_train, scale = TRUE, rank. = 20)
+summary(pca_part)
+```
+
+```{r}
+# This part illustrate how to apply PCA on the testing set
+predict(pca_transform, newdata = X_test)
+```
+
 
 ## Linear Regression
 ```{r}
@@ -551,5 +585,12 @@ fit <- lm(diabetes ~ marital_status+total_family_income+income_vs_poverty+
 household_income+gender+age+race+highest_edu+energy+carbonhydrate+
 total_sugar+total_fat+sodium+diabetes+BMI+HDL_Cholesterol, data=data)
 summary(fit)
+```
+
+# Modeling
+```{r}
+# Runting: Boosting, RF
+# Yuxin: SVM, KNN
+# Jessie: Logistic Regression, Linear Regression
 ```
 
