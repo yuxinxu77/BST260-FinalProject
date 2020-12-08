@@ -572,9 +572,11 @@ pca_part <- prcomp(X_train, scale = TRUE, rank. = 20)
 summary(pca_part)
 ```
 
+
 ```{r}
-# This part illustrate how to apply PCA on the testing set
-predict(pca_transform, newdata = X_test)
+# Apply pca transform on both training set and test set
+X_train_pca = data.frame(pca_part$x)
+X_test_pca = data.frame(predict(pca_part, newdata = X_test))
 ```
 
 
