@@ -526,31 +526,43 @@ data_onehot <- data %>% select(-c("SEQN")) %>%
            marital_status = as.factor(marital_status), 
            race = as.factor(race)) 
 data_onehot <- one_hot(data.table(data_onehot))
+data_onehot <- data_onehot %>% mutate(diabetes = as.factor(diabetes))
 ```
 
 ## Train-test split
 ```{r}
-data_0 <- data_onehot %>% filter(diabetes == 0)
-data_1 <- data_onehot %>% filter(diabetes == 1)
-data_0_sample <- sample_n(data_0, nrow(data_1))
-data_sample <- rbind(data_0_sample, data_1)
-
-train_index <- createDataPartition(data_sample$diabetes, times = 1, p = 0.8, list = FALSE)
-train_set <- data_sample[train_index, ]
-test_set <- data_sample[-train_index, ]
-X_train <- train_set %>% select(-c(diabetes))
-y_train <- train_set$diabetes
-X_test <- test_set %>% select(-c(diabetes))
-y_test <- test_set$diabetes
+# data_0 <- data_onehot %>% filter(diabetes == 0)
+# data_1 <- data_onehot %>% filter(diabetes == 1)
+# data_0_sample <- sample_n(data_0, nrow(data_1))
+# data_sample <- rbind(data_0_sample, data_1)
+# 
+# train_index <- createDataPartition(data_sample$diabetes, times = 1, p = 0.8, list = FALSE)
+# train_set <- data_sample[train_index, ]
+# test_set <- data_sample[-train_index, ]
+# X_train <- train_set %>% select(-c(diabetes))
+# y_train <- train_set$diabetes
+# X_test <- test_set %>% select(-c(diabetes))
+# y_test <- test_set$diabetes
 ```
 
 ```{r}
 library(caret)
+library(ROSE)
 train_index <- createDataPartition(data_onehot$diabetes, times = 1, p = 0.8, list = FALSE)
 train_set <- data_onehot[train_index, ]
+train_balanced <- ovun.sample(diabetes ~ ., data = train_set, method = "over", N = 5108)$data
+table(train_balanced$diabetes)
+
 test_set <- data_onehot[-train_index, ]
+
+# Unbalanced training data
 X_train <- train_set %>% select(-c(diabetes))
 y_train <- train_set$diabetes
+
+# Balanced training data
+X_train_balanced <- train_balanced %>% select(-c(diabetes))
+y_train_balanced <- train_balanced$diabetes
+
 X_test <- test_set %>% select(-c(diabetes))
 y_test <- test_set$diabetes
 ```
@@ -581,24 +593,33 @@ fviz_pca_var(pca_full,
 corrplot(get_pca(pca_full)$cos2, is.corr=FALSE)
 
 ```
+
 ```{r}
 # Run pca on selected number of priciple components
 pca_part <- prcomp(X_train, scale = TRUE, rank. = 10)
 summary(pca_part)
-```
-
-
-```{r}
 # Apply pca transform on both training set and test set
+# Unbalanced training data
 X_train_pca = data.frame(pca_part$x)
 X_test_pca = data.frame(predict(pca_part, newdata = X_test))
 ```
 
 
 ```{r}
+# Run pca on selected number of priciple components
+pca_balanced_part <- prcomp(X_train_balanced, scale = TRUE, rank. = 10)
+summary(pca_balanced_part)
+# Apply pca transform on both training set and test set
+# Unbalanced training data
+X_train_balanced_pca = data.frame(pca_balanced_part$x)
+X_test_balanced_pca = data.frame(predict(pca_balanced_part, newdata = X_test))
+```
+
+
+```{r}
 #Convert target to factor
-y_train <- as.factor(y_train)
-y_test <- as.factor(y_test)
+# y_train <- as.factor(y_train)
+# y_test <- as.factor(y_test)
 ```
 
 
@@ -634,8 +655,6 @@ roc_curve <- roc(y_test, glm_predict_prob,
 sensitivity_ci <- ci.se(roc_curve)
 plot(sensitivity_ci, type="shape", col="lightblue")
 ```
-## Oversampling vs PCA
-## Shiny app
 
 #RF
 ```{r}
@@ -645,6 +664,8 @@ library(ROSE)
 data_balanced <- ovun.sample(y ~ ., data = train, method = "over",N = 5108)$data
 table(data_balanced$y)
 ```
+
+# RF
 ```{r}
 # Perform training:
 rf_classifier = randomForest(y~., data = data_balanced, xtest = X_test_pca, ytest=y_test, ntree=500, mtry=2, importance=TRUE, keep.forest=TRUE)
@@ -658,6 +679,7 @@ plot(perf,colorize=TRUE)
 
 ```
 
+# Boosting
 ```{r}
 library(gbm)
 boost=gbm(y ~.,
@@ -675,3 +697,5 @@ y_pred <- ifelse(as.numeric(pred)>0.5,0,1)
 table(y_test, y_pred)
 ```
 
+## Oversampling vs PCA
+## Shiny app
