@@ -530,6 +530,21 @@ data_onehot <- one_hot(data.table(data_onehot))
 
 ## Train-test split
 ```{r}
+data_0 <- data_onehot %>% filter(diabetes == 0)
+data_1 <- data_onehot %>% filter(diabetes == 1)
+data_0_sample <- sample_n(data_0, nrow(data_1))
+data_sample <- rbind(data_0_sample, data_1)
+
+train_index <- createDataPartition(data_sample$diabetes, times = 1, p = 0.8, list = FALSE)
+train_set <- data_sample[train_index, ]
+test_set <- data_sample[-train_index, ]
+X_train <- train_set %>% select(-c(diabetes))
+y_train <- train_set$diabetes
+X_test <- test_set %>% select(-c(diabetes))
+y_test <- test_set$diabetes
+```
+
+```{r}
 library(caret)
 train_index <- createDataPartition(data_onehot$diabetes, times = 1, p = 0.8, list = FALSE)
 train_set <- data_onehot[train_index, ]
@@ -568,7 +583,7 @@ corrplot(get_pca(pca_full)$cos2, is.corr=FALSE)
 ```
 ```{r}
 # Run pca on selected number of priciple components
-pca_part <- prcomp(X_train, scale = TRUE, rank. = 20)
+pca_part <- prcomp(X_train, scale = TRUE, rank. = 10)
 summary(pca_part)
 ```
 
@@ -579,16 +594,6 @@ X_train_pca = data.frame(pca_part$x)
 X_test_pca = data.frame(predict(pca_part, newdata = X_test))
 ```
 
-
-## Linear Regression
-```{r}
-#linear regression
-fit <- lm(diabetes ~ marital_status+total_family_income+income_vs_poverty+
-household_income+gender+age+race+highest_edu+energy+carbonhydrate+
-total_sugar+total_fat+sodium+diabetes+BMI+HDL_Cholesterol, data=data)
-summary(fit)
-```
-
 # Modeling
 ```{r}
 # Runting: Boosting, RF
@@ -596,3 +601,30 @@ summary(fit)
 # Jessie: Logistic Regression, Linear Regression
 ```
 
+## Linear Regression
+```{r}
+#Logistics regression
+library(pROC)
+# train_regression <- cbind(X_train_pca, y_train) %>% rename(diabetes = y_train)
+train_regression <- cbind(X_train, y_train) %>% rename(diabetes = y_train)
+# glm_fit <- glm(diabetes ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9 + PC10 + PC11 + PC12 + PC13 + PC14 + PC15 + PC16 + PC17 + PC18 + PC19 + PC20, data = train_regression, family=binomial)
+# glm_fit <- glm(diabetes ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9 + PC10, data = train_regression, family=binomial)
+glm_fit <- glm(diabetes ~ ., data = train_regression, family=binomial)
+summary(glm_fit)
+glm_predict_prob <- predict(glm_fit, X_test, type="response")
+glm_predict <- ifelse(glm_predict_prob >= 0.5, 1, 0)
+# table(glm_predict, y_test)
+# mean(glm_predict == y_test)
+confusionMatrix(as.factor(glm_predict), as.factor(y_test))
+roc_curve <- roc(y_test, glm_predict_prob, 
+                 smoothed = TRUE,
+                 # arguments for ci
+                 ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+                 # arguments for plot
+                 plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+                 print.auc=TRUE, show.thres=TRUE)
+sensitivity_ci <- ci.se(roc_curve)
+plot(sensitivity_ci, type="shape", col="lightblue")
+```
+## Oversampling vs PCA
+## Shiny app
