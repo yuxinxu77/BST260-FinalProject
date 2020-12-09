@@ -594,6 +594,14 @@ X_train_pca = data.frame(pca_part$x)
 X_test_pca = data.frame(predict(pca_part, newdata = X_test))
 ```
 
+
+```{r}
+#Convert target to factor
+y_train <- as.factor(y_train)
+y_test <- as.factor(y_test)
+```
+
+
 # Modeling
 ```{r}
 # Runting: Boosting, RF
@@ -628,3 +636,42 @@ plot(sensitivity_ci, type="shape", col="lightblue")
 ```
 ## Oversampling vs PCA
 ## Shiny app
+
+#RF
+```{r}
+#balance data
+library(randomForest)
+library(ROSE)
+data_balanced <- ovun.sample(y ~ ., data = train, method = "over",N = 5108)$data
+table(data_balanced$y)
+```
+```{r}
+# Perform training:
+rf_classifier = randomForest(y~., data = data_balanced, xtest = X_test_pca, ytest=y_test, ntree=500, mtry=2, importance=TRUE, keep.forest=TRUE)
+pre = predict(rf_classifier, X_test_pca)
+pred = prediction(as.numeric(pre), as.numeric(y_test))
+library(ROCR)
+perf <- performance(pred,"tpr","fpr")
+plot(perf,colorize=TRUE)
+## Setting levels: control = 0, case = 1
+## Setting direction: controls < cases
+
+```
+
+```{r}
+library(gbm)
+boost=gbm(y ~.,
+              data = data_balanced,
+              distribution = "multinomial",
+              cv.folds = 10,
+              shrinkage = .01,
+              n.minobsinnode = 10,
+              n.trees = 200)
+```
+```{r}
+pre <- predict(boost, newdata = X_test_pca, type = "response", n.trees = 200)
+pred <- pre[,,1][,1]
+y_pred <- ifelse(as.numeric(pred)>0.5,0,1)
+table(y_test, y_pred)
+```
+
