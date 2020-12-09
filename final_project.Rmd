@@ -655,47 +655,155 @@ roc_curve <- roc(y_test, glm_predict_prob,
 sensitivity_ci <- ci.se(roc_curve)
 plot(sensitivity_ci, type="shape", col="lightblue")
 ```
-
+```{r}
+#function to plot roc curve
+plot_roc <- function(pre){
+roc_curve <- roc(y_test, as.numeric(pre),
+                 smoothed = TRUE,
+                 # arguments for ci
+                 ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+                 # arguments for plot
+                 plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+                 print.auc=TRUE, show.thres=TRUE)
+sensitivity_ci <- ci.se(roc_curve)
+plot(sensitivity_ci, type="shape", col="lightblue")
+}
+```
 #RF
 ```{r}
-#balance data
 library(randomForest)
 library(ROSE)
-data_balanced <- ovun.sample(y ~ ., data = train, method = "over",N = 5108)$data
-table(data_balanced$y)
+#No PCA, not balanced: TERRIBLE
+tr <- trainControl(method = "cv", number = 10)
+rf_classifier = randomForest(x = X_train, y = y_train, xtest = X_test, ytest=y_test, ntree=100, mtry=4, importance=TRUE, keep.forest=TRUE, trControl = tr)
+rf_classifier
+pre = predict(rf_classifier, X_test, type = "response")
+confusionMatrix(as.factor(pre), as.factor(y_test))
+plot_roc(as.numeric(pre))
+
 ```
 
-# RF
 ```{r}
-# Perform training:
-rf_classifier = randomForest(y~., data = data_balanced, xtest = X_test_pca, ytest=y_test, ntree=500, mtry=2, importance=TRUE, keep.forest=TRUE)
-pre = predict(rf_classifier, X_test_pca)
-pred = prediction(as.numeric(pre), as.numeric(y_test))
-library(ROCR)
-perf <- performance(pred,"tpr","fpr")
-plot(perf,colorize=TRUE)
-## Setting levels: control = 0, case = 1
-## Setting direction: controls < cases
+library(randomForest)
+library(ROSE)
+#PCA, balanced: 
+tr <- trainControl(method = "cv", number = 10)
+for (mtry in c(2,5,8)){
+  for (nodesize in c(1,5,9)){
+      print(paste("mtry =" , mtry , ",nodesize =" , nodesize , ",maxnodes" , maxnodes))
+rf_classifier = randomForest(x = X_train_balanced_pca, y = y_train_balanced, xtest = X_test_balanced_pca, ytest=y_test, ntree=100, importance=TRUE, keep.forest=TRUE, trControl = tr, maxnodes = 10)
+#rf_classifier
+pre = predict(rf_classifier, X_test_balanced_pca, type = "response")
+print(confusionMatrix(as.factor(pre), as.factor(y_test)))
+  }
+  }
 
+#plot_roc(as.numeric(pre))
+
+```
+
+```{r}
+#best rf for No PCA, balanced GOOD
+rf_classifier = randomForest(x = X_train_balanced, y = y_train_balanced, xtest = X_test, ytest=y_test, ntree=100, mtry=5, importance=TRUE, keep.forest=TRUE, trControl = tr, nodesize = 5, maxnodes = 15) #maxnodes is the most important
+#rf_classifier
+pre = predict(rf_classifier, X_test, type = "response")
+print(confusionMatrix(as.factor(pre), as.factor(y_test)))
+plot_roc(as.numeric(pre))
+```
+
+```{r}
+#PCA, not balanced: emmm
+tr <- trainControl(method = "cv", number = 10)
+rf_classifier = randomForest(x = X_train_pca, y = y_train, xtest = X_test_pca, ytest=y_test, ntree=100, mtry=5, importance=TRUE, keep.forest=TRUE, trControl = tr, nodesize = 5, )
+#rf_classifier
+pre = predict(rf_classifier, X_test_pca, type = "response")
+print(confusionMatrix(as.factor(pre), as.factor(y_test)))
+
+
+```
+
+```{r}
+#pca balanced GOOD
+rf_classifier = randomForest(x = X_train_balanced_pca, y = y_train_balanced, xtest = X_test_balanced_pca, ytest=y_test, ntree=100, importance=TRUE, keep.forest=TRUE, trControl = tr, maxnodes = 15)
+#rf_classifier
+pre = predict(rf_classifier, X_test_balanced_pca, type = "response")
+print(confusionMatrix(as.factor(pre), as.factor(y_test)))
+plot_roc(as.numeric(pre))
 ```
 
 # Boosting
 ```{r}
 library(gbm)
+#no pca not balanced GOOD
+data_nn = X_train
+class(y_train)
+data_nn$y = y_train
+
 boost=gbm(y ~.,
-              data = data_balanced,
+              data = data_nn,
+              distribution = "multinomial",
+              cv.folds = 10,
+              shrinkage = .1,
+              n.minobsinnode = 20,
+              n.trees = 150) #reduce n.trees to increase sensitivity
+pre <- predict(boost, newdata = X_test, type = "response", n.trees = 200)
+pred <- pre[,,1][,1]
+y_pred <- ifelse(as.numeric(pred)>0.85,0,1)
+confusionMatrix(as.factor(y_pred), as.factor(y_test))
+plot_roc(as.numeric(y_pred))
+```
+
+```{r}
+#no pca, balanced GOOD
+data_nb = X_train_balanced
+data_nb$y = y_train_balanced
+
+boost=gbm(y ~.,
+              data = data_nb,
+              distribution = "multinomial",
+              cv.folds = 10,
+              shrinkage = .1,
+              n.minobsinnode = 10,
+              n.trees = 100) #reduce n.trees to increase sensitivity
+pre <- predict(boost, newdata = X_test, type = "response", n.trees = 200)
+pred <- pre[,,1][,1]
+y_pred <- ifelse(as.numeric(pred)>0.5,0,1)
+confusionMatrix(as.factor(y_pred), as.factor(y_test))
+plot_roc(as.numeric(y_pred))
+```
+```{r}
+#pca, not balanced TERRIBLE
+data_bn = X_train_pca
+data_bn$y = y_train
+
+boost=gbm(y ~.,
+              data = data_bn,
+              distribution = "multinomial",
+              cv.folds = 10,
+              shrinkage = .3,
+              n.minobsinnode = 10,
+              n.trees = 50) #reduce n.trees to increase sensitivity
+pre <- predict(boost, newdata = X_test_pca, type = "response", n.trees = 200)
+pred <- pre[,,1][,1]
+y_pred <- ifelse(as.numeric(pred)>0.7,0,1)
+confusionMatrix(as.factor(y_pred), as.factor(y_test))
+```
+```{r}
+#pca,balanced emmm
+data_bb = X_train_balanced_pca
+data_bb$y = y_train_balanced
+
+boost=gbm(y ~.,
+              data = data_bb,
               distribution = "multinomial",
               cv.folds = 10,
               shrinkage = .01,
               n.minobsinnode = 10,
-              n.trees = 200)
-```
-```{r}
+              n.trees = 100) #reduce n.trees to increase sensitivity
 pre <- predict(boost, newdata = X_test_pca, type = "response", n.trees = 200)
 pred <- pre[,,1][,1]
 y_pred <- ifelse(as.numeric(pred)>0.5,0,1)
-table(y_test, y_pred)
+confusionMatrix(as.factor(y_pred), as.factor(y_test))
 ```
-
 ## Oversampling vs PCA
 ## Shiny app
