@@ -182,7 +182,7 @@ d_age <- data %>% select(age, diabetes) %>%
     age >= 70 & age < 80 ~ level_age[8],
     age >= 80 & age < 90 ~ level_age[9])) %>% 
   group_by(age_tag, diabetes) %>% 
-  summarise(percentage = n()) %>% 
+  summarise(percentage = n(), .groups = "drop") %>% 
   mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
   mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
 
@@ -225,7 +225,7 @@ d_energy <- data %>% select(energy, diabetes) %>%
     energy >= 7000 & energy < 8000 ~ level_energy[8],
     energy >= 8000 & energy < 9000 ~ level_energy[9])) %>% 
   group_by(energy_tag, diabetes) %>% 
-  summarise(percentage = n()) %>% 
+  summarise(percentage = n(), .groups = "drop") %>% 
   mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
   mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
 
@@ -270,7 +270,7 @@ d_carb <- data %>% select(carbonhydrate, diabetes) %>%
     carbonhydrate >= 900 & carbonhydrate < 1000 ~ level_carb[10],
     carbonhydrate >= 1000 & carbonhydrate < 1100 ~ level_carb[11])) %>% 
   group_by(carb_tag, diabetes) %>% 
-  summarise(percentage = n()) %>% 
+  summarise(percentage = n(), .groups = "drop") %>% 
   mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
   mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
 
@@ -314,7 +314,7 @@ d_sugar <- data %>% select(total_sugar, diabetes) %>%
     total_sugar >= 800 & total_sugar < 900 ~ level_sugar[9],
     total_sugar >= 900 & total_sugar < 1000 ~ level_sugar[10])) %>% 
   group_by(sugar_tag, diabetes) %>% 
-  summarise(percentage = n()) %>% 
+  summarise(percentage = n(), .groups = "drop") %>% 
   mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
   mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
 
@@ -356,7 +356,7 @@ d_fat <- data %>% select(total_fat, diabetes) %>%
     total_fat >= 300 & total_fat < 350 ~ level_fat[7],
     total_fat >= 350 & total_fat < 400 ~ level_fat[8])) %>% 
   group_by(fat_tag, diabetes) %>% 
-  summarise(percentage = n()) %>% 
+  summarise(percentage = n(), .group = "drop") %>% 
   mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
   mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
 
@@ -403,7 +403,7 @@ d_sodium <- data %>% select(sodium, diabetes) %>%
     sodium >= 22000 & sodium < 24000 ~ level_sodium[12],
     sodium >= 24000 & sodium < 26000 ~ level_sodium[13])) %>% 
   group_by(sodium_tag, diabetes) %>% 
-  summarise(percentage = n()) %>% 
+  summarise(percentage = n(), .group = "drop") %>% 
   mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
   mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
 
@@ -595,7 +595,7 @@ corrplot(get_pca(pca_full)$cos2, is.corr=FALSE)
 ```
 
 ```{r}
-# Run pca on selected number of priciple components
+# Run pca on selected number of principle components
 pca_part <- prcomp(X_train, scale = TRUE, rank. = 10)
 summary(pca_part)
 # Apply pca transform on both training set and test set
@@ -805,5 +805,93 @@ pred <- pre[,,1][,1]
 y_pred <- ifelse(as.numeric(pred)>0.5,0,1)
 confusionMatrix(as.factor(y_pred), as.factor(y_test))
 ```
+##SVM
+```{r}
+# SVM PCA, balanced: sensitivity 0.76, specificity 0.65, roc 0.71 Normal-Good
+
+svm <- train(y ~., data = data_bb, method = 'svmLinearWeights2', trControl = trainControl("repeatedcv", number = 10), preProcess = c("center","scale") )
+
+
+pre_svm <- predict(svm, X_test_balanced_pca)
+
+confusionMatrix(pre_svm, y_test, positive = "1")
+plot_roc(as.numeric(pre_svm))
+
+```
+```{r}
+# SVM PCA, not balanced: sensitivity 0.01, specificity 1, roc 0.51 Very Bad
+
+
+svm <- train(y ~., data = data_bn, method = 'svmLinearWeights2', trControl = trainControl("repeatedcv", number = 10), preProcess = c("center","scale") )
+
+
+pre_svm <- predict(svm, X_test_pca)
+
+confusionMatrix(pre_svm,y_test, positive = "1")
+plot_roc(as.numeric(pre_svm))
+```
+```{r}
+# SVM not PCA, balanced: sensitivity 0.78, specificity 0.70, roc 0.74 Good
+
+svm <- train(y ~., data = data_nb, method = 'svmLinear', trControl = trainControl("repeatedcv", number = 10), preProcess = c("center","scale") )
+
+
+pre_svm <- predict(svm, X_test)
+
+confusionMatrix(pre_svm,y_test, positive = "1")
+plot_roc(as.numeric(pre_svm))
+```
+```{r}
+# SVM not PCA, not balanced: sensitivity 0.1, specificity 0.98, roc 0.55 Very Bad
+
+svm <- train(y ~., data = data_nn, method = 'svmLinearWeights2', trControl = trainControl("repeatedcv", number = 10), preProcess = c("center","scale") )
+
+
+pre_svm <- predict(svm, X_test)
+
+confusionMatrix(pre_svm,y_test, positive = "1")
+plot_roc(as.numeric(pre_svm))
+
+```
+
+
+## KNN
+```{r}
+library(class)
+
+# KNN pca, balanced: sensitivity 0.73, specificity 0.61, roc 0.67 Normal-Good
+
+pre_knn <- knn(X_train_balanced_pca, X_test_balanced_pca , cl = y_train_balanced, k = 18, l = 0, prob = FALSE, use.all = TRUE)
+
+confusionMatrix(pre_knn, y_test, positive = "1")
+plot_roc(as.numeric(pre_knn))
+```
+
+```{r}
+# KNN not pca, balanced: sensitivity 0.34, specificity 0.7, roc 0.52 Bad-Normal
+
+pre_knn <- knn(X_train_balanced, X_test , cl = y_train_balanced, k = 2, l = 0, prob = FALSE, use.all = TRUE)
+
+confusionMatrix(pre_knn, y_test, positive = "1")
+plot_roc(as.numeric(pre_knn))
+```
+```{r}
+# KNN pca, not balanced: sensitivity 0.21, specificity 0.86, roc 0.54 Very bad
+
+pre_knn <- knn(X_train_pca, X_test_pca , cl = y_train, k = 2, l = 0, prob = FALSE, use.all = TRUE)
+
+confusionMatrix(pre_knn, y_test, positive = "1")
+plot_roc(as.numeric(pre_knn))
+```
+```{r}
+# KNN not pca, not balanced: sensitivity 0.2, specificity 0.83, roc 0.51 Very Bad
+
+pre_knn <- knn(X_train, X_test, cl = y_train, k = 2, l = 0, prob = FALSE, use.all = TRUE)
+
+confusionMatrix(pre_knn, y_test, positive = "1")
+plot_roc(as.numeric(pre_knn))
+```
+
+
 ## Oversampling vs PCA
 ## Shiny app
