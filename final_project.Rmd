@@ -18,12 +18,12 @@ library(ggcorrplot)
 # data_dir <- "./data"
 # setwd(data_dir)
 ```
-Our dataset contains a target variable in the form of a single-choice questionnaire answer, and features from four categories: diet, demographics, examination and lab. 
+Our dataset contains a target variable in the form of a single-choice questionnaire answer, and features from four categories: diet, demographics, examination and lab.
 
 There are a few steps that we performed across all categories of data:
 
 1. Import data from .XPT file.
-2. Select features we want and rename their columns from special indices into column names that's more intuitive. 
+2. Select features we want and rename their columns from special indices into column names that's more intuitive.
 3. Drop rows with NA values.
 
 But there are still some steps that are special to specific categories that we went through:
@@ -74,18 +74,18 @@ For target data, we filtered the dataset to make sure that the target variable (
 ## Demographic Data Preprocessing
 ```{r}
 demo <- read.xport("./data/DEMO_J.XPT")
-demo_clean <- demo %>% select(SEQN, DMDEDUC2, DMDMARTL, INDFMIN2, INDFMPIR, 
+demo_clean <- demo %>% select(SEQN, DMDEDUC2, DMDMARTL, INDFMIN2, INDFMPIR,
                               RIAGENDR, RIDAGEYR, RIDRETH3) %>%
-                        rename(highest_edu = DMDEDUC2, marital_status = DMDMARTL, 
-                               total_family_income = INDFMIN2, income_vs_poverty = INDFMPIR, 
+                        rename(highest_edu = DMDEDUC2, marital_status = DMDMARTL,
+                               total_family_income = INDFMIN2, income_vs_poverty = INDFMPIR,
                                gender = RIAGENDR, age = RIDAGEYR, race = RIDRETH3)
 
 # Assgin marital status with values 77-Refused, 99-Don't Know, and NA to 0-Not Specified
-demo_clean <- demo_clean %>% mutate(marital_status = 
+demo_clean <- demo_clean %>% mutate(marital_status =
                                      ifelse(marital_status == 77 | marital_status == 99 | is.na(marital_status) == TRUE, 0, marital_status))
 # Drop any rows with NULL values in total_family_income, income_vs_poverty, household_income, highest_edu
-demo_clean <- demo_clean %>% filter(is.na(total_family_income) != TRUE 
-                                    & is.na(income_vs_poverty) != TRUE 
+demo_clean <- demo_clean %>% filter(is.na(total_family_income) != TRUE
+                                    & is.na(income_vs_poverty) != TRUE
                                     & is.na(highest_edu) != TRUE)
 summary(demo_clean)
 # Join demographics data with other data and drop any rows with NULL values
@@ -94,7 +94,7 @@ data <- left_join(demo_clean, dat, by = "SEQN") %>% drop_na()
 
 ```
 
-1. In order to decrease the number of categories inside feature "marital status", we reassign answers representing "Refused", "Don't know" and NA values to the category "Not Specified". 
+1. In order to decrease the number of categories inside feature "marital status", we reassign answers representing "Refused", "Don't know" and NA values to the category "Not Specified".
 2. To simplify of our classification problem, we decided to delete rows where feature "highest education"is only that only rarely appear in our dataset.
 
 
@@ -103,8 +103,8 @@ data <- left_join(demo_clean, dat, by = "SEQN") %>% drop_na()
 # Add BMI to the cleaned data and drop any rows with NULL values
 # 5631 observation left
 exam <- read.xport("./data/BMX_J.XPT")
-data <- left_join(data, exam %>% select(SEQN, BMXBMI), by = "SEQN") %>% 
-                    rename(BMI = BMXBMI) %>% 
+data <- left_join(data, exam %>% select(SEQN, BMXBMI), by = "SEQN") %>%
+                    rename(BMI = BMXBMI) %>%
                     drop_na()
 ```
 
@@ -115,8 +115,8 @@ data <- left_join(data, exam %>% select(SEQN, BMXBMI), by = "SEQN") %>%
 data$SEQN <- as.numeric(data$SEQN)
 lab3 <- read.xport("./data/HDL_J.XPT")
 lab3$SEQN <- as.numeric(lab3$SEQN)
-data <- left_join(data, lab3 %>% select(SEQN, LBDHDD), by = "SEQN") %>% 
-  rename(HDL_Cholesterol = LBDHDD) %>% 
+data <- left_join(data, lab3 %>% select(SEQN, LBDHDD), by = "SEQN") %>%
+  rename(HDL_Cholesterol = LBDHDD) %>%
   drop_na()
 ```
 
@@ -150,30 +150,30 @@ pie_chart<- function(diab, cat, level) {
 
 cats <- c("hightest_edu", "marital_status", "gender", "race", "total_family_income")
 level_edu <- c("Less than 9th grade","9-11th grade (Includes 12th grade with no diploma)",
-               "High school graduate/GED or equivalent",	
+               "High school graduate/GED or equivalent",
                "Some college or AA degree",
                "College graduate or above")
 level_marital <- c("Married", "Widowed", "Divorced", "Separated", "Never married",
-                   "Living with partner")	
+                   "Living with partner")
 level_gender <- c("Male", "Female")
 
 level_race <- c("Mexican American",		
-                "Other Hispanic",	
-                "Non-Hispanic White",	
-                "Non-Hispanic Black",	
-                "Non-Hispanic Asian",	
+                "Other Hispanic",
+                "Non-Hispanic White",
+                "Non-Hispanic Black",
+                "Non-Hispanic Asian",
                 "Other Race - Including Multi-Racial")
-level_income <- c("$0 to $4,999", 
-                  "$5,000 to $9,999", 
+level_income <- c("$0 to $4,999",
+                  "$5,000 to $9,999",
                   "$10,000 to $14,999",
                   "$15,000 to $19,999",
-                  "$20,000 to $24,999", 
-                  "$25,000 to $34,999", 
-                  "$35,000 to $44,999", 
-                  "$45,000 to $54,999", 
-                  "$55,000 to $64,999", 
-                  "$65,000 to $74,999", 
-                  "$75,000 to $99,999", 
+                  "$20,000 to $24,999",
+                  "$25,000 to $34,999",
+                  "$35,000 to $44,999",
+                  "$45,000 to $54,999",
+                  "$55,000 to $64,999",
+                  "$65,000 to $74,999",
+                  "$75,000 to $99,999",
                   "$100,000 and Over")
 
 ###### Questions ##########
@@ -194,7 +194,7 @@ pie_chart(1, "total_family_income", level_income)
 ```{r}
 # back to back histogram: age
 level_age <- c("[0-10)","[10-20)", "[20-30)", "[30-40)", "[40-50)", "[50-60)","[60-70)", "[70-80)","[80-90)", "[90-100)")
-d_age <- data %>% select(age, diabetes) %>% 
+d_age <- data %>% select(age, diabetes) %>%
   mutate(age_tag = case_when(
     age < 10 ~ level_age[1],
     age >= 10 & age < 20 ~ level_age[2],
@@ -204,21 +204,21 @@ d_age <- data %>% select(age, diabetes) %>%
     age >= 50 & age < 60 ~ level_age[6],
     age >= 60 & age < 70 ~ level_age[7],
     age >= 70 & age < 80 ~ level_age[8],
-    age >= 80 & age < 90 ~ level_age[9])) %>% 
-  group_by(age_tag, diabetes) %>% 
-  summarise(percentage = n(), .groups = "drop") %>% 
-  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
+    age >= 80 & age < 90 ~ level_age[9])) %>%
+  group_by(age_tag, diabetes) %>%
+  summarise(percentage = n(), .groups = "drop") %>%
+  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>%
   mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
 
 # plot
-age <- d_age %>% 
+age <- d_age %>%
   ggplot(aes(x = age_tag, y = percentage, group = diabetes, fill = diabetes)) +
   geom_bar(stat = "identity", width = 0.75) +
   coord_flip() +
   scale_x_discrete(limits = level_age) +
   # another trick!
   scale_y_continuous(limits = c(-1, 1),
-                     breaks = seq(-1, 1, 0.1), 
+                     breaks = seq(-1, 1, 0.1),
                      labels = abs(seq(-1 , 1, 0.1))) +
   labs(x = "Age (years)", y = "Percentage", title = "Age-Diabetes Distribution Comparison") +
   theme(legend.position = "bottom",
@@ -228,7 +228,7 @@ age <- d_age %>%
   scale_fill_manual(values=c("red", "blue"),
                     name="",
                     breaks=c("Has Diabetes", "No Diabetes"),
-                    labels=c("Has Diabetes", "No Diabetes")) 
+                    labels=c("Has Diabetes", "No Diabetes"))
 
 ```
 
@@ -238,7 +238,7 @@ library(patchwork)
 
 # back to back histogram: energy
 level_energy <- c("[0-1000)","[1000-2000)", "[2000-3000)", "[3000-4000)", "[4000-5000)", "[5000-6000)","[6000-7000)", "[7000-8000)","[8000-9000)")
-d_energy <- data %>% select(energy, diabetes) %>% 
+d_energy <- data %>% select(energy, diabetes) %>%
   mutate(energy_tag = case_when(
     energy < 1000 ~ level_energy[1],
     energy >= 1000 & energy < 2000 ~ level_energy[2],
@@ -248,21 +248,21 @@ d_energy <- data %>% select(energy, diabetes) %>%
     energy >= 5000 & energy < 6000 ~ level_energy[6],
     energy >= 6000 & energy < 7000 ~ level_energy[7],
     energy >= 7000 & energy < 8000 ~ level_energy[8],
-    energy >= 8000 & energy < 9000 ~ level_energy[9])) %>% 
-  group_by(energy_tag, diabetes) %>% 
-  summarise(percentage = n(), .groups = "drop") %>% 
-  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
+    energy >= 8000 & energy < 9000 ~ level_energy[9])) %>%
+  group_by(energy_tag, diabetes) %>%
+  summarise(percentage = n(), .groups = "drop") %>%
+  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>%
   mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
 
 # plot
-energy <- d_energy %>% 
+energy <- d_energy %>%
   ggplot(aes(x = energy_tag, y = percentage, group = diabetes, fill = diabetes)) +
   geom_bar(stat = "identity", width = 0.75) +
   coord_flip() +
   scale_x_discrete(limits = level_energy) +
   # another trick!
   scale_y_continuous(limits = c(-1, 1),
-                     breaks = seq(-1, 1, 0.1), 
+                     breaks = seq(-1, 1, 0.1),
                      labels = abs(seq(-1 , 1, 0.1))) +
   labs(x = "Energy (kcal)", y = "Percentage", title = "Daily Energy Intake \n Diabetes Distribution Comparison") +
   theme(legend.position = "bottom",
@@ -272,7 +272,7 @@ energy <- d_energy %>%
   scale_fill_manual(values=c("red", "blue"),
                     name="",
                     breaks=c("Has Diabetes", "No Diabetes"),
-                    labels=c("Has Diabetes", "No Diabetes")) 
+                    labels=c("Has Diabetes", "No Diabetes"))
 
 ```
 
@@ -280,7 +280,7 @@ energy <- d_energy %>%
 ```{r}
 # back to back histogram: carbonhydrate
 level_carb <- c("[0-100)","[100-200)", "[200-300)", "[300-400)", "[400-500)", "[500-600)","[600-700)", "[700-800)","[800-900)", "[900-1000)", "[1000-1100)")
-d_carb <- data %>% select(carbonhydrate, diabetes) %>% 
+d_carb <- data %>% select(carbonhydrate, diabetes) %>%
   mutate(carb_tag = case_when(
     carbonhydrate < 100 ~ level_carb[1],
     carbonhydrate >= 100 & carbonhydrate < 200 ~ level_carb[2],
@@ -292,21 +292,21 @@ d_carb <- data %>% select(carbonhydrate, diabetes) %>%
     carbonhydrate >= 700 & carbonhydrate < 800 ~ level_carb[8],
     carbonhydrate >= 800 & carbonhydrate < 900 ~ level_carb[9],
     carbonhydrate >= 900 & carbonhydrate < 1000 ~ level_carb[10],
-    carbonhydrate >= 1000 & carbonhydrate < 1100 ~ level_carb[11])) %>% 
-  group_by(carb_tag, diabetes) %>% 
-  summarise(percentage = n(), .groups = "drop") %>% 
-  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
+    carbonhydrate >= 1000 & carbonhydrate < 1100 ~ level_carb[11])) %>%
+  group_by(carb_tag, diabetes) %>%
+  summarise(percentage = n(), .groups = "drop") %>%
+  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>%
   mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
 
 # plot
-carb <- d_carb %>% 
+carb <- d_carb %>%
   ggplot(aes(x = carb_tag, y = percentage, group = diabetes, fill = diabetes)) +
   geom_bar(stat = "identity", width = 0.75) +
   coord_flip() +
   scale_x_discrete(limits = level_carb) +
   # another trick!
   scale_y_continuous(limits = c(-1, 1),
-                     breaks = seq(-1, 1, 0.1), 
+                     breaks = seq(-1, 1, 0.1),
                      labels = abs(seq(-1 , 1, 0.1))) +
   labs(x = "Carbonhydrate (gm)", y = "Percentage", title = "Daily Carbonhydrate Intake \n Diabetes Distribution Comparison") +
   theme(legend.position = "bottom",
@@ -316,7 +316,7 @@ carb <- d_carb %>%
   scale_fill_manual(values=c("red", "blue"),
                     name="",
                     breaks=c("Has Diabetes", "No Diabetes"),
-                    labels=c("Has Diabetes", "No Diabetes")) 
+                    labels=c("Has Diabetes", "No Diabetes"))
 
 ```
 
@@ -324,7 +324,7 @@ carb <- d_carb %>%
 ```{r}
 # back to back histogram: sugar
 level_sugar <- c("[0-100)","[100-200)", "[200-300)", "[300-400)", "[400-500)", "[500-600)","[600-700)", "[700-800)","[800-900)", "[900-1000)")
-d_sugar <- data %>% select(total_sugar, diabetes) %>% 
+d_sugar <- data %>% select(total_sugar, diabetes) %>%
   mutate(sugar_tag = case_when(
     total_sugar < 100 ~ level_sugar[1],
     total_sugar >= 100 & total_sugar < 200 ~ level_sugar[2],
@@ -335,21 +335,21 @@ d_sugar <- data %>% select(total_sugar, diabetes) %>%
     total_sugar >= 600 & total_sugar < 700 ~ level_sugar[7],
     total_sugar >= 700 & total_sugar < 800 ~ level_sugar[8],
     total_sugar >= 800 & total_sugar < 900 ~ level_sugar[9],
-    total_sugar >= 900 & total_sugar < 1000 ~ level_sugar[10])) %>% 
-  group_by(sugar_tag, diabetes) %>% 
-  summarise(percentage = n(), .groups = "drop") %>% 
-  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
+    total_sugar >= 900 & total_sugar < 1000 ~ level_sugar[10])) %>%
+  group_by(sugar_tag, diabetes) %>%
+  summarise(percentage = n(), .groups = "drop") %>%
+  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>%
   mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
 
 # plot
-sugar <- d_sugar %>% 
+sugar <- d_sugar %>%
   ggplot(aes(x = sugar_tag, y = percentage, group = diabetes, fill = diabetes)) +
   geom_bar(stat = "identity", width = 0.75) +
   coord_flip() +
   scale_x_discrete(limits = level_sugar) +
   # another trick!
   scale_y_continuous(limits = c(-1, 1),
-                     breaks = seq(-1, 1, 0.1), 
+                     breaks = seq(-1, 1, 0.1),
                      labels = abs(seq(-1 , 1, 0.1))) +
   labs(x = "Total Sugar (gm)", y = "Percentage", title = "Daily Sugar Intake \n Diabetes Distribution Comparison") +
   theme(legend.position = "bottom",
@@ -359,7 +359,7 @@ sugar <- d_sugar %>%
   scale_fill_manual(values=c("red", "blue"),
                     name="",
                     breaks=c("Has Diabetes", "No Diabetes"),
-                    labels=c("Has Diabetes", "No Diabetes")) 
+                    labels=c("Has Diabetes", "No Diabetes"))
 
 ```
 
@@ -367,7 +367,7 @@ sugar <- d_sugar %>%
 ```{r}
 # back to back histogram: fat
 level_fat <- c("[0-50)","[50-100)", "[100-150)", "[150-200)", "[200-250)", "[250-300)","[300-350)", "[350-400)")
-d_fat <- data %>% select(total_fat, diabetes) %>% 
+d_fat <- data %>% select(total_fat, diabetes) %>%
   mutate(fat_tag = case_when(
     total_fat < 50 ~ level_fat[1],
     total_fat >= 50 & total_fat < 100 ~ level_fat[2],
@@ -376,21 +376,21 @@ d_fat <- data %>% select(total_fat, diabetes) %>%
     total_fat >= 200 & total_fat < 250 ~ level_fat[5],
     total_fat >= 250 & total_fat < 300 ~ level_fat[6],
     total_fat >= 300 & total_fat < 350 ~ level_fat[7],
-    total_fat >= 350 & total_fat < 400 ~ level_fat[8])) %>% 
-  group_by(fat_tag, diabetes) %>% 
-  summarise(percentage = n(), .groups = "drop") %>% 
-  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
+    total_fat >= 350 & total_fat < 400 ~ level_fat[8])) %>%
+  group_by(fat_tag, diabetes) %>%
+  summarise(percentage = n(), .groups = "drop") %>%
+  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>%
   mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
 
 # plot
-fat <- d_fat %>% 
+fat <- d_fat %>%
   ggplot(aes(x = fat_tag, y = percentage, group = diabetes, fill = diabetes)) +
   geom_bar(stat = "identity", width = 0.75) +
   coord_flip() +
   scale_x_discrete(limits = level_fat) +
   # another trick!
   scale_y_continuous(limits = c(-1, 1),
-                     breaks = seq(-1, 1, 0.1), 
+                     breaks = seq(-1, 1, 0.1),
                      labels = abs(seq(-1 , 1, 0.1))) +
   labs(x = "Total Fat (gm)", y = "Percentage", title = "Daily Fat Intake \n Diabetes Distribution Comparison") +
   theme(legend.position = "bottom",
@@ -400,7 +400,7 @@ fat <- d_fat %>%
   scale_fill_manual(values=c("red", "blue"),
                     name="",
                     breaks=c("Has Diabetes", "No Diabetes"),
-                    labels=c("Has Diabetes", "No Diabetes")) 
+                    labels=c("Has Diabetes", "No Diabetes"))
 
 ```
 
@@ -408,7 +408,7 @@ fat <- d_fat %>%
 ```{r}
 # back to back histogram: sodium
 level_sodium <- c("[0-2000)","[2000-4000)", "[4000-6000)", "[6000-8000)", "[8000-10000)", "[10000-12000)","[12000-14000)", "[14000-16000)","[16000-18000)", "[18000-20000)", "[20000-22000)", "[22000-24000)", "[24000-26000)")
-d_sodium <- data %>% select(sodium, diabetes) %>% 
+d_sodium <- data %>% select(sodium, diabetes) %>%
   mutate(sodium_tag = case_when(
     sodium < 2000 ~ level_sodium[1],
     sodium >= 2000 & sodium < 4000 ~ level_sodium[2],
@@ -422,21 +422,21 @@ d_sodium <- data %>% select(sodium, diabetes) %>%
     sodium >= 18000 & sodium < 20000 ~ level_sodium[10],
     sodium >= 20000 & sodium < 22000 ~ level_sodium[11],
     sodium >= 22000 & sodium < 24000 ~ level_sodium[12],
-    sodium >= 24000 & sodium < 26000 ~ level_sodium[13])) %>% 
-  group_by(sodium_tag, diabetes) %>% 
-  summarise(percentage = n(), .groups = "drop") %>% 
-  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
+    sodium >= 24000 & sodium < 26000 ~ level_sodium[13])) %>%
+  group_by(sodium_tag, diabetes) %>%
+  summarise(percentage = n(), .groups = "drop") %>%
+  mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>%
   mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
 
 # plot
-sodium <- d_sodium %>% 
+sodium <- d_sodium %>%
   ggplot(aes(x = sodium_tag, y = percentage, group = diabetes, fill = diabetes)) +
   geom_bar(stat = "identity", width = 0.75) +
   coord_flip() +
   scale_x_discrete(limits = level_sodium) +
   # another trick!
   scale_y_continuous(limits = c(-1, 1),
-                     breaks = seq(-1, 1, 0.1), 
+                     breaks = seq(-1, 1, 0.1),
                      labels = abs(seq(-1 , 1, 0.1))) +
   labs(x = "Total Sodium (mg)", y = "Percentage", title = "Daily Sodium Intake \n Diabetes Distribution Comparison") +
   theme(legend.position = "bottom",
@@ -446,7 +446,7 @@ sodium <- d_sodium %>%
   scale_fill_manual(values=c("red", "blue"),
                     name="",
                     breaks=c("Has Diabetes", "No Diabetes"),
-                    labels=c("Has Diabetes", "No Diabetes")) 
+                    labels=c("Has Diabetes", "No Diabetes"))
 ```
 ```{r}
 print(age)
@@ -520,7 +520,7 @@ data %>% select(BMI, diabetes) %>%
     theme_classic()
 ```
 
-The difference between Body Mass Index distributions of diabetes patients and the healthy is still small, but BMI distribution is more right skewed compared to that of the healthy, implying a higher BMI. This is consistent with the fact that BMI is positively correlated with risk of diabetes ([reference](https://care.diabetesjournals.org/content/30/6/1562#:~:text=Lifetime%20risk%20by%20BMI,%3E35%20kg%2Fm2.)). 
+The difference between Body Mass Index distributions of diabetes patients and the healthy is still small, but BMI distribution is more right skewed compared to that of the healthy, implying a higher BMI. This is consistent with the fact that BMI is positively correlated with risk of diabetes ([reference](https://care.diabetesjournals.org/content/30/6/1562#:~:text=Lifetime%20risk%20by%20BMI,%3E35%20kg%2Fm2.)).
 
 ### HDL_Cholesterol
 ```{r}
@@ -530,7 +530,7 @@ mean_cho <- data %>% select(HDL_Cholesterol, diabetes) %>%
     summarise(mean = mean(HDL_Cholesterol), .groups = "drop")
 
 data %>% select(HDL_Cholesterol, diabetes) %>%
-    mutate(HDL_Cholesterol = as.numeric(HDL_Cholesterol), 
+    mutate(HDL_Cholesterol = as.numeric(HDL_Cholesterol),
            diabetes = ifelse(diabetes == 1, "Diabetes", "No Diabetes")) %>%
     rename(Diabetes = diabetes) %>%
     ggplot(aes(x=HDL_Cholesterol, color=Diabetes, fill=Diabetes)) +
@@ -563,12 +563,12 @@ We then use one-hot encoding to convert categorical features into multiple colum
 library(mltools)
 library(data.table)
 
-data_onehot <- data %>% select(-c("SEQN")) %>% 
-    mutate(total_family_income = ifelse(total_family_income == 14 | total_family_income == 15, 
+data_onehot <- data %>% select(-c("SEQN")) %>%
+    mutate(total_family_income = ifelse(total_family_income == 14 | total_family_income == 15,
                                         ifelse(total_family_income == 14, 11, 12), total_family_income)) %>%
-    mutate(highest_edu = as.factor(highest_edu), 
-           marital_status = as.factor(marital_status), 
-           race = as.factor(race)) 
+    mutate(highest_edu = as.factor(highest_edu),
+           marital_status = as.factor(marital_status),
+           race = as.factor(race))
 data_onehot <- one_hot(data.table(data_onehot))
 data_onehot <- data_onehot %>% mutate(diabetes = as.factor(diabetes))
 ```
@@ -581,7 +581,7 @@ We then randomly split the data into training set (80%) and testing set (20%).
 # data_1 <- data_onehot %>% filter(diabetes == 1)
 # data_0_sample <- sample_n(data_0, nrow(data_1))
 # data_sample <- rbind(data_0_sample, data_1)
-# 
+#
 # train_index <- createDataPartition(data_sample$diabetes, times = 1, p = 0.8, list = FALSE)
 # train_set <- data_sample[train_index, ]
 # test_set <- data_sample[-train_index, ]
@@ -678,20 +678,15 @@ X_test_balanced_pca = data.frame(predict(pca_balanced_part, newdata = X_test))
 
 ## Linear Regression
 ```{r}
-#Logistics regression
+# LR: not balanced, no pca
 library(pROC)
-# train_regression <- cbind(X_train_pca, y_train) %>% rename(diabetes = y_train)
 train_regression <- cbind(X_train, y_train) %>% rename(diabetes = y_train)
-# glm_fit <- glm(diabetes ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9 + PC10 + PC11 + PC12 + PC13 + PC14 + PC15 + PC16 + PC17 + PC18 + PC19 + PC20, data = train_regression, family=binomial)
-# glm_fit <- glm(diabetes ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9 + PC10, data = train_regression, family=binomial)
 glm_fit <- glm(diabetes ~ ., data = train_regression, family=binomial)
 summary(glm_fit)
 glm_predict_prob <- predict(glm_fit, X_test, type="response")
-glm_predict <- ifelse(glm_predict_prob >= 0.5, 1, 0)
-# table(glm_predict, y_test)
-# mean(glm_predict == y_test)
-confusionMatrix(as.factor(glm_predict), as.factor(y_test))
-roc_curve <- roc(y_test, glm_predict_prob, 
+glm_predict <- ifelse(glm_predict_prob >= 0.1, 1, 0)
+confusionMatrix(as.factor(glm_predict), as.factor(y_test), positive = "1")
+roc_curve <- roc(y_test, glm_predict_prob,
                  smoothed = TRUE,
                  # arguments for ci
                  ci=TRUE, ci.alpha=0.9, stratified=FALSE,
@@ -701,6 +696,73 @@ roc_curve <- roc(y_test, glm_predict_prob,
 sensitivity_ci <- ci.se(roc_curve)
 plot(sensitivity_ci, type="shape", col="lightblue")
 ```
+
+```{r}
+# LR: not balanced, no pca, cv
+train_control <- trainControl(method = "cv", number = 10)
+glm_cv <- train(diabetes ~ .,
+               data = train_regression,
+               trControl = train_control,
+               method = "glm",
+               family=binomial())
+
+summary(glm_cv)
+glm_predict_prob <- predict(glm_cv, X_test, type="prob")
+glm_predict <- ifelse(glm_predict_prob >= 0.5, 1, 0)
+glm_predict <- ifelse(glm_predict[, 1] == 1, 0, 1)
+confusionMatrix(as.factor(glm_predict), as.factor(y_test), positive = "1")
+roc_curve <- roc(y_test, glm_predict_prob[, 1],
+                 smoothed = TRUE,
+                 # arguments for ci
+                 ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+                 # arguments for plot
+                 plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+                 print.auc=TRUE, show.thres=TRUE)
+sensitivity_ci <- ci.se(roc_curve)
+plot(sensitivity_ci, type="shape", col="lightblue")
+```
+
+```{r}
+# LR: not balanced, with PCA
+# library(pROC)
+train_regression_pca <- cbind(X_train_pca, y_train) %>% rename(diabetes = y_train)
+glm_fit_pca <- glm(diabetes ~ ., data = train_regression_pca, family=binomial)
+summary(glm_fit_pca)
+glm_predict_prob <- predict(glm_fit_pca, X_test_pca, type="response")
+glm_predict <- ifelse(glm_predict_prob >= 0.5, 1, 0)
+confusionMatrix(as.factor(glm_predict), as.factor(y_test), positive = "1")
+roc_curve <- roc(y_test, glm_predict_prob,
+                 smoothed = TRUE,
+                 # arguments for ci
+                 ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+                 # arguments for plot
+                 plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+                 print.auc=TRUE, show.thres=TRUE)
+sensitivity_ci <- ci.se(roc_curve)
+plot(sensitivity_ci, type="shape", col="lightblue")
+```
+
+```{r}
+# LR: balanced, not PCA
+# library(pROC)
+train_regression_balanced <- cbind(X_train_balanced, y_train_balanced) %>% rename(diabetes = y_train_balanced)
+glm_fit_balanced <- glm(diabetes ~ ., data = train_regression_balanced, family=binomial)
+summary(glm_fit_balanced)
+glm_predict_prob <- predict(glm_fit_balanced, X_test, type="response")
+glm_predict <- ifelse(glm_predict_prob >= 0.37, 1, 0)
+confusionMatrix(as.factor(glm_predict), as.factor(y_test), positive = "1")
+roc_curve <- roc(y_test, glm_predict_prob,
+                 smoothed = TRUE,
+                 # arguments for ci
+                 ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+                 # arguments for plot
+                 plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+                 print.auc=TRUE, show.thres=TRUE)
+sensitivity_ci <- ci.se(roc_curve)
+plot(sensitivity_ci, type="shape", col="lightblue")
+
+```
+
 ```{r}
 #function to plot roc curve
 plot_roc <- function(pre){
@@ -715,6 +777,28 @@ sensitivity_ci <- ci.se(roc_curve)
 plot(sensitivity_ci, type="shape", col="lightblue")
 }
 ```
+
+
+```{r}
+# LR: balanced, with PCA
+# library(pROC)
+train_regression_balanced_pca <- cbind(X_train_balanced_pca, y_train_balanced) %>% rename(diabetes = y_train_balanced)
+glm_fit_balanced_pca <- glm(diabetes ~ ., data = train_regression_balanced_pca, family=binomial)
+summary(glm_fit_balanced_pca)
+glm_predict_prob <- predict(glm_fit_balanced_pca, X_test_balanced_pca, type="response")
+glm_predict <- ifelse(glm_predict_prob >= 0.37, 1, 0)
+confusionMatrix(as.factor(glm_predict), as.factor(y_test), positive = "1")
+roc_curve <- roc(y_test, glm_predict_prob,
+                 smoothed = TRUE,
+                 # arguments for ci
+                 ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+                 # arguments for plot
+                 plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+                 print.auc=TRUE, show.thres=TRUE)
+sensitivity_ci <- ci.se(roc_curve)
+plot(sensitivity_ci, type="shape", col="lightblue")
+```
+
 #RF
 ```{r}
 library(randomForest)
@@ -732,7 +816,7 @@ plot_roc(as.numeric(pre))
 ```{r}
 library(randomForest)
 library(ROSE)
-#PCA, balanced: 
+#PCA, balanced:
 tr <- trainControl(method = "cv", number = 10)
 for (mtry in c(2,5,8)){
   for (nodesize in c(1,5,9)){
@@ -817,6 +901,7 @@ y_pred <- ifelse(as.numeric(pred)>0.5,0,1)
 confusionMatrix(as.factor(y_pred), as.factor(y_test))
 plot_roc(as.numeric(y_pred))
 ```
+
 ```{r}
 #pca, not balanced TERRIBLE
 data_bn = X_train_pca
@@ -834,6 +919,7 @@ pred <- pre[,,1][,1]
 y_pred <- ifelse(as.numeric(pred)>0.7,0,1)
 confusionMatrix(as.factor(y_pred), as.factor(y_test))
 ```
+
 ```{r}
 #pca,balanced emmm
 data_bb = X_train_balanced_pca
@@ -886,6 +972,7 @@ plot_roc(as.numeric(pre_svm))
 pre_svm <- ifelse(pre_svm > 0.1, 1, 0)
 confusionMatrix(as.factor(pre_svm), y_test, positive = "1")
 ```
+
 ```{r}
 # SVM not PCA, balanced: sensitivity 0.83, specificity 0.66, roc 0.81 Good
 
@@ -911,7 +998,7 @@ We suspect the reason that SVM performs better with principal component analysis
 
 
 ```{r}
-# SVM not PCA, not balanced: sensitivity 0.85, specificity 0.51, roc 0.77 Good 
+# SVM not PCA, not balanced: sensitivity 0.85, specificity 0.51, roc 0.77 Good
 
 svm <- svm(x = X_train, y = y_train, scale = TRUE, kernel = 'linear', cross = 10, probability = TRUE)
 
@@ -943,7 +1030,7 @@ pre_knn <- ifelse(pre_knn > 0.4, 1, 0)
 confusionMatrix(as.factor(pre_knn), y_test, positive = "1")
 
 ```
-KNN stands for k-nearest neighbor. It assumes that similar objects belongs to the the same class. For each data point in the test set, it finds the nearest k neighbors with classes, look at their classes and assign the class with most vote to the data point. For KNN, we set k to 18, and trained using dataset with principal component analysis and oversampling, dataset without principal component analysis and with oversampling, dataset with principal component analysis and without oversampling, and dataset without principal component analysis or oversampling. 
+KNN stands for k-nearest neighbor. It assumes that similar objects belongs to the the same class. For each data point in the test set, it finds the nearest k neighbors with classes, look at their classes and assign the class with most vote to the data point. For KNN, we set k to 18, and trained using dataset with principal component analysis and oversampling, dataset without principal component analysis and with oversampling, dataset with principal component analysis and without oversampling, and dataset without principal component analysis or oversampling.
 
 For KNN, the best model is the one trained with dataset oversampled and with principal component analysis. It has a sensitivity of 0.73, a specificity of 0.61, and a 0.67 auc-roc score.
 
@@ -962,6 +1049,7 @@ plot_roc(as.numeric(pre_knn))
 pre_knn <- ifelse(pre_knn > 0.25, 1, 0)
 confusionMatrix(as.factor(pre_knn), y_test, positive = "1")
 ```
+
 ```{r}
 # KNN pca, not balanced: sensitivity 0.21, specificity 0.86, roc 0.54 Very bad
 
@@ -974,6 +1062,7 @@ pre_knn <- ifelse(pre_knn > 0.1, 1, 0)
 confusionMatrix(as.factor(pre_knn), y_test, positive = "1")
 
 ```
+
 ```{r}
 # KNN not pca, not balanced: sensitivity 0.2, specificity 0.83, roc 0.51 Very Bad
 
