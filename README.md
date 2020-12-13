@@ -23,7 +23,8 @@ There are a few steps that we performed across all categories of data:
 ### Exploratory Data Analysis adn Visualization
 We performed some explorative analysis over the features we selected to examine if they seem to relate to our target variable (diabetes y/n). Since our dataset contains both categorical data and numerical data, we apply different kinds of visualization plot on our data. Here we list the type of graphs we used in this section:
 * Pie chart: mainly for categorical data.
-![Highest Education Level Among Diabetes Patients]("./image/pie_chart.png")
+
+![Highest Education Level Among Diabetes Patients]("image/pie_chart.png")
 
 * Back-to-back histogram: mainly for numerical data.
 * Histogram with density plot: mainly for numerical data.
