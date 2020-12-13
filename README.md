@@ -44,8 +44,8 @@ We then train our model using five different algorithms: logistic regression, ra
      <td>ROC Curve</td>
   </tr>
   <tr>
-    <td><img src="./image/glm_cm.png" width=400 height=480></td>
-    <td><img src="./image/glm_roc.png" width=400 height=480></td>
+    <td><img src="./image/glm_cm.png" width=300 height=480></td>
+    <td><img src="./image/glm_roc.png" width=500 height=480></td>
   </tr>
  </table>
 
