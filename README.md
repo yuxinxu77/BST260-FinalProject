@@ -20,7 +20,7 @@ There are a few steps that we performed across all categories of data:
 2. Select features we want and rename their columns from special indices into column names that's more intuitive.
 3. Drop rows with NA values and extremely rare values.
 
-### Exploratory Data Analysis adn Visualization
+### Exploratory Data Analysis and Visualization
 We perform some explorative analysis over the features we selected to examine if they seem to relate to our target variable (diabetes y/n). Since our dataset contains both categorical data and numerical data, we apply different kinds of visualization plot on our data. Here we list the type of graphs we used in this section:
 * Pie chart: mainly for categorical data.
 ![Highest Education Level Among Diabetes Patients](./image/pie_chart.png)
