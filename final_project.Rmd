@@ -229,6 +229,8 @@ pie_chart(0, "total_family_income", level_income)
 pie_chart(1, "total_family_income", level_income)
 ```
 Lastly, looking at total family income, we might find that the fraction of people with the highest income ($100,000 and over, $75,000 to $99,999, and $65,000 to $74,999) in the non-diabetes group is greater than the diabetes group.
+
+
 ## Back to Back Histogram
 ### Age
 ```{r}
@@ -599,6 +601,7 @@ We then constructed a heatmap to inspect the correlation between features. Not t
 ## One-hot encoding
 
 We then use one-hot encoding to convert categorical features into multiple columns that eliminates the unnecessary ordinality between categeories.
+
 ```{r}
 library(mltools)
 library(data.table)
@@ -887,40 +890,6 @@ Gradient boosting models tell a different story. Similarly, as training Random F
 However, in this case, PCA had a strong negative impact on model performance. On the other hand, the boosting model is very robust to handle imbalanced data: both models training by balanced/imbalanced data give similar result, with AUC around 0.83. To keep the model training process simple, we chose the one trained by original imbalanced data.
 
 ##SVM
-```{r}
-# SVM PCA, balanced: sensitivity 0.81, specificity 0.55, roc 0.76 Normal-Good
-
-library(e1071)
-
-svm <- svm(x = X_train_balanced_pca, y = y_train_balanced, scale = TRUE, kernel = 'poly', cross = 10, probability = TRUE)
-
-pre_svm <- predict(svm, X_test_balanced_pca, probability = TRUE)
-# print(pre_svm)
-
-pre_svm <- attr(pre_svm,"prob")[,2]
-plot_roc(as.numeric(pre_svm))
-# print(pre_svm)
-
-pre_svm <- ifelse(pre_svm > 0.35, 1, 0)
-confusionMatrix(as.factor(pre_svm), y_test, positive = "1")
-
-```
-
-```{r}
-# SVM PCA, not balanced: sensitivity 0.98, specificity 0.14, roc 0.72 Normal
-
-svm <- svm(x = X_train_pca, y = y_train, scale = TRUE, kernel = 'poly', cross = 10, probability = TRUE)
-
-pre_svm <- predict(svm, X_test_pca, probability = TRUE)
-# print(pre_svm)
-
-pre_svm <- attr(pre_svm,"prob")[,2]
-plot_roc(as.numeric(pre_svm))
-# print(pre_svm)
-
-pre_svm <- ifelse(pre_svm > 0.1, 1, 0)
-confusionMatrix(as.factor(pre_svm), y_test, positive = "1")
-```
 
 ```{r}
 # SVM not PCA, balanced: sensitivity 0.83, specificity 0.66, roc 0.81 Good
@@ -946,24 +915,6 @@ It's not hard to see why SVM performs better in a balanced dataset using oversam
 We suspect the reason that SVM performs better with principal component analysis is that PCA filtered out some spatial information in the 28 features we picked that could be important to the training of SVM.  
 
 
-```{r}
-# SVM not PCA, not balanced: sensitivity 0.85, specificity 0.51, roc 0.77 Good
-
-svm <- svm(x = X_train, y = y_train, scale = TRUE, kernel = 'linear', cross = 10, probability = TRUE)
-
-pre_svm <- predict(svm, X_test, probability = TRUE)
-# print(pre_svm)
-
-pre_svm <- attr(pre_svm,"prob")[,2]
-plot_roc(as.numeric(pre_svm))
-# print(pre_svm)
-
-pre_svm <- ifelse(pre_svm > 0.15, 1, 0)
-confusionMatrix(as.factor(pre_svm), y_test, positive = "1")
-
-```
-
-
 ## KNN
 ```{r}
 library(class)
@@ -979,6 +930,7 @@ pre_knn <- ifelse(pre_knn > 0.4, 1, 0)
 confusionMatrix(as.factor(pre_knn), y_test, positive = "1")
 
 ```
+
 KNN stands for k-nearest neighbor. It assumes that similar objects belongs to the the same class. For each data point in the test set, it finds the nearest k neighbors with classes, look at their classes and assign the class with most vote to the data point. For KNN, we set k to 18, and trained using dataset with principal component analysis and oversampling, dataset without principal component analysis and with oversampling, dataset with principal component analysis and without oversampling, and dataset without principal component analysis or oversampling.
 
 For KNN, the best model is the one trained with dataset oversampled and with principal component analysis. It has a sensitivity of 0.73, a specificity of 0.61, and a 0.67 auc-roc score.
@@ -986,44 +938,6 @@ For KNN, the best model is the one trained with dataset oversampled and with pri
 It's also not a surprise that KNN performs better in a balanced dataset. KNN is, in its essence, a communty-level voting system that considers a majority of vote as a win. So no wonder the dominant class will use its dominance in number to affect the voting result, even when in some cases, data points have some neighbors from the non-dominant class and actually belong to that class themselves. A balanced dataset can avoid much of this negative effect.
 
 KNN requires a dense distribution of data points in the hyperspace of data, and is thus very vulnerable to the curse of dimensionality. With principal component analysis decreasing th dimensions, for KNN, it is imaginable that this help outweighs the loss of information caused by principal component analysis.
-
-```{r}
-# KNN not pca, balanced: sensitivity 0.34, specificity 0.7, roc 0.52 Bad-Normal
-
-pre_knn <- knn(X_train_balanced, X_test , cl = y_train_balanced, k = 2, l = 0, prob = TRUE, use.all = TRUE)
-
-pre_knn <- ifelse(pre_knn == 1, attr(pre_knn, "prob"), 1 - attr(pre_knn, "prob"))
-plot_roc(as.numeric(pre_knn))
-
-pre_knn <- ifelse(pre_knn > 0.25, 1, 0)
-confusionMatrix(as.factor(pre_knn), y_test, positive = "1")
-```
-
-```{r}
-# KNN pca, not balanced: sensitivity 0.21, specificity 0.86, roc 0.54 Very bad
-
-pre_knn <- knn(X_train_pca, X_test_pca , cl = y_train, k = 2, l = 0, prob = TRUE, use.all = TRUE)
-
-pre_knn <- ifelse(pre_knn == 1, attr(pre_knn, "prob"), 1 - attr(pre_knn, "prob"))
-plot_roc(as.numeric(pre_knn))
-
-pre_knn <- ifelse(pre_knn > 0.1, 1, 0)
-confusionMatrix(as.factor(pre_knn), y_test, positive = "1")
-
-```
-
-```{r}
-# KNN not pca, not balanced: sensitivity 0.2, specificity 0.83, roc 0.51 Very Bad
-
-pre_knn <- knn(X_train, X_test, cl = y_train, k = 2, l = 0, prob = TRUE, use.all = TRUE)
-
-pre_knn <- ifelse(pre_knn == 1, attr(pre_knn, "prob"), 1 - attr(pre_knn, "prob"))
-plot_roc(as.numeric(pre_knn))
-
-pre_knn <- ifelse(pre_knn > 0.1, 1, 0)
-confusionMatrix(as.factor(pre_knn), y_test, positive = "1")
-
-```
 
 
 ## Oversampling vs PCA
