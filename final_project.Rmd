@@ -34,8 +34,6 @@ library(SASxport)
 library(dplyr)
 library(tidyverse)
 library(ggcorrplot)
-# data_dir <- "./data"
-# setwd(data_dir)
 ```
 Our dataset contains a target variable in the form of a single-choice questionnaire answer, and features from four categories: diet, demographics, examination and lab.
 
