@@ -172,7 +172,7 @@ pie_chart<- function(diab, cat, level) {
     coord_polar("y", start=0)
 }
 
-cats <- c("hightest_edu", "marital_status", "gender", "race", "total_family_income")
+cats <- c("highest_edu", "marital_status", "gender", "race", "total_family_income")
 level_edu <- c("Less than 9th grade","9-11th grade (Includes 12th grade with no diploma)",
                "High school graduate/GED or equivalent",
                "Some college or AA degree",
