@@ -8,8 +8,10 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+## BST260 FINAL PROJECT {.tabset .tabset-fade}
 
-# Data Preprocessing
+
+### Data Preprocessing
 ```{r}
 library(SASxport)
 library(dplyr)
@@ -117,9 +119,9 @@ data <- data %>% filter(highest_edu != 7 & highest_edu != 9 & marital_status != 
 ```{r}
 #pie chart
 pie_chart<- function(diab, cat, level) {
-  pie_dat <- as.data.frame(table(data %>% filter(diabetes ==diab)%>%select(cat)))%>%rename(cat = Var1)
-  pie_dat $ cat<- level
-  ggplot(pie_dat, aes(x="", y=Freq, fill=cat)) +
+  pie_dat <- as.data.frame(table(data %>% filter(diabetes ==diab)%>%select(cat)))%>%rename(categories = Var1)
+  pie_dat $ categories<- level
+  ggplot(pie_dat, aes(x="", y=Freq, fill=categories)) +
     geom_bar(stat="identity", width=1) +
     coord_polar("y", start=0)
 }
@@ -164,6 +166,7 @@ pie_chart(1, "race", level_race)
 pie_chart(0, "total_family_income", level_income)
 pie_chart(1, "total_family_income", level_income)
 ```
+
 
 ## Back to Back Histogram
 ### Age
@@ -688,15 +691,6 @@ library(randomForest)
 library(ROSE)
 #PCA, balanced: 
 tr <- trainControl(method = "cv", number = 10)
-for (mtry in c(2,5,8)){
-  for (nodesize in c(1,5,9)){
-      print(paste("mtry =" , mtry , ",nodesize =" , nodesize , ",maxnodes" , maxnodes))
-rf_classifier = randomForest(x = X_train_balanced_pca, y = y_train_balanced, xtest = X_test_balanced_pca, ytest=y_test, ntree=100, importance=TRUE, keep.forest=TRUE, trControl = tr, maxnodes = 10)
-#rf_classifier
-pre = predict(rf_classifier, X_test_balanced_pca, type = "response")
-print(confusionMatrix(as.factor(pre), as.factor(y_test)))
-  }
-  }
 
 #plot_roc(as.numeric(pre))
 
@@ -706,10 +700,18 @@ print(confusionMatrix(as.factor(pre), as.factor(y_test)))
 #best rf for No PCA, balanced GOOD
 rf_classifier = randomForest(x = X_train_balanced, y = y_train_balanced, xtest = X_test, ytest=y_test, ntree=100, mtry=5, importance=TRUE, keep.forest=TRUE, trControl = tr, nodesize = 5, maxnodes = 15) #maxnodes is the most important
 #rf_classifier
-pre = predict(rf_classifier, X_test, type = "response")
-print(confusionMatrix(as.factor(pre), as.factor(y_test)))
-plot_roc(as.numeric(pre))
+pre_prob = predict(rf_classifier, X_test, type = "prob")[,1]
+pre = ifelse(pre_prob >= 0.52, 0, 1)
+confusionMatrix(as.factor(pre), as.factor(y_test))
+plot_roc(pre_prob)
 ```
+We trained Random Forest models on four training sets, with/without PCA and balanced/not balanced, respectively. After carefully tuning parameters and plotting ROC curves, we found that random forest models are very sensitive to imbalanced data. In our original training set, there are 1549 negative(0) observations, but only 500 positive(1) observations. Therefore, there is a significant probability that a bootstrap sample contains few or even none of the minority class, resulting in a tree with poor performance for predicting the minority class.(https://statistics.berkeley.edu/tech-reports/666) Indeed, two of our models, trained by original imbalanced data, can hardly discriminate between 0 and 1. Instead, they classify almost everyone into the negative class. 
+
+Furthermore, in the two models trained by balanced data, we found that the model without PCA gives a better result, possibly because some information was lost in the process of performing PCA. 
+
+Finally, from all Random Forest models, we chose the model trained by balanced data without PCA. The area under the ROC curve (AUC) is 0.83, suggesting that it is a fairly good classification model. As high sensitivity is our first goal, we set a threshold such that sensitivity is high enough while specificity is acceptable.  
+
+
 
 ```{r}
 #PCA, not balanced: emmm
@@ -726,9 +728,10 @@ print(confusionMatrix(as.factor(pre), as.factor(y_test)))
 #pca balanced GOOD
 rf_classifier = randomForest(x = X_train_balanced_pca, y = y_train_balanced, xtest = X_test_balanced_pca, ytest=y_test, ntree=100, importance=TRUE, keep.forest=TRUE, trControl = tr, maxnodes = 15)
 #rf_classifier
-pre = predict(rf_classifier, X_test_balanced_pca, type = "response")
-print(confusionMatrix(as.factor(pre), as.factor(y_test)))
-plot_roc(as.numeric(pre))
+pre_prob = predict(rf_classifier, X_test_balanced_pca, type = "prob")[,1]
+pre = ifelse(pre_prob >= 0.5, 0, 1)
+confusionMatrix(as.factor(pre), as.factor(y_test))
+plot_roc(pre_prob)
 ```
 
 # Boosting
@@ -746,12 +749,13 @@ boost=gbm(y ~.,
               shrinkage = .1,
               n.minobsinnode = 20,
               n.trees = 150) #reduce n.trees to increase sensitivity
-pre <- predict(boost, newdata = X_test, type = "response", n.trees = 200)
-pred <- pre[,,1][,1]
-y_pred <- ifelse(as.numeric(pred)>0.85,0,1)
+pre <- predict(boost, newdata = X_test, type = "response", n.trees = 200)[,,1][,1]
+y_pred <- ifelse(as.numeric(pre)>0.87,0,1)
 confusionMatrix(as.factor(y_pred), as.factor(y_test))
-plot_roc(as.numeric(y_pred))
+plot_roc(as.numeric(pre))
 ```
+Gradient boosting models tell a different story. Similarly, as training Random Forest model, we tried on four training datasets with/without PCA and balanced/non-balanced. 
+However, in this case, PCA had a strong negative impact on model performance. On the other hand, the boosting model is very robust to handle imbalanced data: both models training by balanced/imbalanced data give similar result, with AUC around 0.83. To keep the model training process simple, we chose the one trained by original imbalanced data. 
 
 ```{r}
 #no pca, balanced GOOD
@@ -767,9 +771,9 @@ boost=gbm(y ~.,
               n.trees = 100) #reduce n.trees to increase sensitivity
 pre <- predict(boost, newdata = X_test, type = "response", n.trees = 200)
 pred <- pre[,,1][,1]
-y_pred <- ifelse(as.numeric(pred)>0.5,0,1)
+y_pred <- ifelse(as.numeric(pred)>0.6,0,1)
 confusionMatrix(as.factor(y_pred), as.factor(y_test))
-plot_roc(as.numeric(y_pred))
+plot_roc(as.numeric(pred))
 ```
 ```{r}
 #pca, not balanced TERRIBLE
@@ -807,6 +811,7 @@ confusionMatrix(as.factor(y_pred), as.factor(y_test))
 ```
 ##SVM
 ```{r}
+library('e1071')
 # SVM PCA, balanced: sensitivity 0.76, specificity 0.65, roc 0.71 Normal-Good
 
 svm <- train(y ~., data = data_bb, method = 'svmLinearWeights2', trControl = trainControl("repeatedcv", number = 10), preProcess = c("center","scale") )
