@@ -18,6 +18,15 @@ library(ggcorrplot)
 # data_dir <- "./data"
 # setwd(data_dir)
 ```
+Our dataset contains a target variable in the form of a single-choice questionnaire answer, and features from four categories: diet, demographics, examination and lab. 
+
+There are a few steps that we performed across all categories of data:
+
+1. Import data from .XPT file.
+2. Select features we want and rename their columns from special indices into column names that's more intuitive. 
+3. Drop rows with NA values.
+
+But there are still some steps that are special to specific categories that we went through:
 
 ## Diet Data Preprocessing
 ```{r}
@@ -55,6 +64,13 @@ dat <- inner_join(dat,dat_t, by = 'SEQN')
 dat <- dat %>% filter(diabetes == 1 | diabetes == 2)
 ```
 
+Since in diet data, all wanted features may have both data from day 1 and day 2, we replace the values with the mean from the two days if both exists, and keep the value where on data from one of the day exists.
+
+
+## Target data
+
+For target data, we filtered the dataset to make sure that the target variable ("If doctors told the participant in the patients in the past that they have diabetes") only contains factors that represent yes and no.
+
 ## Demographic Data Preprocessing
 ```{r}
 demo <- read.xport("./data/DEMO_J.XPT")
@@ -77,6 +93,10 @@ summary(demo_clean)
 data <- left_join(demo_clean, dat, by = "SEQN") %>% drop_na()
 
 ```
+
+1. In order to decrease the number of categories inside feature "marital status", we reassign answers representing "Refused", "Don't know" and NA values to the category "Not Specified". 
+2. To simplify of our classification problem, we decided to delete rows where feature "highest education"is only that only rarely appear in our dataset.
+
 
 ## Examination Data Preprocessing
 ```{r}
@@ -113,6 +133,10 @@ data <- data %>% filter(highest_edu != 7 & highest_edu != 9 & marital_status != 
 
 
 # Data Visualization
+
+We performed some explorative analysis over the features we selected to examine if they seem to relate to our target variable (diabetes y/n). We first looked at the categorical features.
+
+
 ## Pie Chart
 ```{r}
 #pie chart
@@ -206,11 +230,12 @@ age <- d_age %>%
                     breaks=c("Has Diabetes", "No Diabetes"),
                     labels=c("Has Diabetes", "No Diabetes")) 
 
-print(age)
 ```
 
 ### Energy
 ```{r}
+library(patchwork)
+
 # back to back histogram: energy
 level_energy <- c("[0-1000)","[1000-2000)", "[2000-3000)", "[3000-4000)", "[4000-5000)", "[5000-6000)","[6000-7000)", "[7000-8000)","[8000-9000)")
 d_energy <- data %>% select(energy, diabetes) %>% 
@@ -239,7 +264,7 @@ energy <- d_energy %>%
   scale_y_continuous(limits = c(-1, 1),
                      breaks = seq(-1, 1, 0.1), 
                      labels = abs(seq(-1 , 1, 0.1))) +
-  labs(x = "Energy (kcal)", y = "Percentage", title = "Daily Energy Intake - Diabetes Distribution Comparison") +
+  labs(x = "Energy (kcal)", y = "Percentage", title = "Daily Energy Intake \n Diabetes Distribution Comparison") +
   theme(legend.position = "bottom",
         legend.title = element_blank(),
         plot.title = element_text(hjust = 0.5),
@@ -249,7 +274,6 @@ energy <- d_energy %>%
                     breaks=c("Has Diabetes", "No Diabetes"),
                     labels=c("Has Diabetes", "No Diabetes")) 
 
-print(energy)
 ```
 
 ### Carbonhydrate
@@ -284,7 +308,7 @@ carb <- d_carb %>%
   scale_y_continuous(limits = c(-1, 1),
                      breaks = seq(-1, 1, 0.1), 
                      labels = abs(seq(-1 , 1, 0.1))) +
-  labs(x = "Carbonhydrate (gm)", y = "Percentage", title = "Daily Carbonhydrate Intake - Diabetes Distribution Comparison") +
+  labs(x = "Carbonhydrate (gm)", y = "Percentage", title = "Daily Carbonhydrate Intake \n Diabetes Distribution Comparison") +
   theme(legend.position = "bottom",
         legend.title = element_blank(),
         plot.title = element_text(hjust = 0.5),
@@ -294,7 +318,6 @@ carb <- d_carb %>%
                     breaks=c("Has Diabetes", "No Diabetes"),
                     labels=c("Has Diabetes", "No Diabetes")) 
 
-print(carb)
 ```
 
 ### Sugar
@@ -328,7 +351,7 @@ sugar <- d_sugar %>%
   scale_y_continuous(limits = c(-1, 1),
                      breaks = seq(-1, 1, 0.1), 
                      labels = abs(seq(-1 , 1, 0.1))) +
-  labs(x = "Total Sugar (gm)", y = "Percentage", title = "Daily Sugar Intake - Diabetes Distribution Comparison") +
+  labs(x = "Total Sugar (gm)", y = "Percentage", title = "Daily Sugar Intake \n Diabetes Distribution Comparison") +
   theme(legend.position = "bottom",
         legend.title = element_blank(),
         plot.title = element_text(hjust = 0.5),
@@ -338,7 +361,6 @@ sugar <- d_sugar %>%
                     breaks=c("Has Diabetes", "No Diabetes"),
                     labels=c("Has Diabetes", "No Diabetes")) 
 
-print(sugar)
 ```
 
 ### Fat
@@ -356,7 +378,7 @@ d_fat <- data %>% select(total_fat, diabetes) %>%
     total_fat >= 300 & total_fat < 350 ~ level_fat[7],
     total_fat >= 350 & total_fat < 400 ~ level_fat[8])) %>% 
   group_by(fat_tag, diabetes) %>% 
-  summarise(percentage = n(), .group = "drop") %>% 
+  summarise(percentage = n(), .groups = "drop") %>% 
   mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
   mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
 
@@ -370,7 +392,7 @@ fat <- d_fat %>%
   scale_y_continuous(limits = c(-1, 1),
                      breaks = seq(-1, 1, 0.1), 
                      labels = abs(seq(-1 , 1, 0.1))) +
-  labs(x = "Total Fat (gm)", y = "Percentage", title = "Daily Fat Intake - Diabetes Distribution Comparison") +
+  labs(x = "Total Fat (gm)", y = "Percentage", title = "Daily Fat Intake \n Diabetes Distribution Comparison") +
   theme(legend.position = "bottom",
         legend.title = element_blank(),
         plot.title = element_text(hjust = 0.5),
@@ -380,7 +402,6 @@ fat <- d_fat %>%
                     breaks=c("Has Diabetes", "No Diabetes"),
                     labels=c("Has Diabetes", "No Diabetes")) 
 
-print(fat)
 ```
 
 ### Sodium
@@ -403,7 +424,7 @@ d_sodium <- data %>% select(sodium, diabetes) %>%
     sodium >= 22000 & sodium < 24000 ~ level_sodium[12],
     sodium >= 24000 & sodium < 26000 ~ level_sodium[13])) %>% 
   group_by(sodium_tag, diabetes) %>% 
-  summarise(percentage = n(), .group = "drop") %>% 
+  summarise(percentage = n(), .groups = "drop") %>% 
   mutate(percentage = ifelse(diabetes == 1, -percentage/sum(data$diabetes == 1), percentage/sum(data$diabetes == 0))) %>% 
   mutate(diabetes = ifelse(diabetes == 0, "No Diabetes", "Has Diabetes"))
 
@@ -417,7 +438,7 @@ sodium <- d_sodium %>%
   scale_y_continuous(limits = c(-1, 1),
                      breaks = seq(-1, 1, 0.1), 
                      labels = abs(seq(-1 , 1, 0.1))) +
-  labs(x = "Total Sodium (mg)", y = "Percentage", title = "Daily Sodium Intake - Diabetes Distribution Comparison") +
+  labs(x = "Total Sodium (mg)", y = "Percentage", title = "Daily Sodium Intake \n Diabetes Distribution Comparison") +
   theme(legend.position = "bottom",
         legend.title = element_blank(),
         plot.title = element_text(hjust = 0.5),
@@ -426,9 +447,21 @@ sodium <- d_sodium %>%
                     name="",
                     breaks=c("Has Diabetes", "No Diabetes"),
                     labels=c("Has Diabetes", "No Diabetes")) 
+```
+```{r}
+print(age)
+```
+According to CDC, more than 90% American diabetes patient has type two diabetes, which most often develops in people more than age 45 ([reference](https://www.cdc.gov/diabetes/basics/type2.html)). Our data accurately captured this skew in age distribution among diabetes patients: patients above age 40 takes up 95% of the whole population of positively diagnosed patients. In the contrary, the distribution of the healthy population spreads more evenly between 20 and 70, and only drastically decreased in the age group 70 or above. This distribution makes sense, since the elderly population might be less responsive to surveys compared to younger age groups.
 
+```{r}
+print(energy)
+print(carb)
+print(sugar)
+print(fat)
 print(sodium)
 ```
+
+In terms of diet distribution, patients diagnosed with diabetes don't differ much from the healthy population. But there is one consistent pattern across the five graphs: diagnosed patients in general tend to consume less compared to the healthy. Given that all diabetes patients already know there diagnosis and will thus pay more attention to their daily consumption, this difference is reasonable.
 
 ## Histogram
 ```{r}
@@ -463,6 +496,9 @@ data %>% select(income_vs_poverty, diabetes) %>%
     labs(title="Ratio of Family Income to Poverty",x="Family Income Ratio", y = "Density")+
     theme_classic()
 ```
+The difference between distribution of diabetes patients and that of the healthy is not big, but in general, diabetes patients tend to have less family income compared to the healthy. Considering the fact that illness might potentially decrease patients' ability of making money, the difference is consistent to the reality.
+
+
 ### BMI
 ```{r}
 mean_bmi <- data %>% select(BMI, diabetes) %>%
@@ -483,6 +519,9 @@ data %>% select(BMI, diabetes) %>%
     labs(title="Body Mass Index",x="Body Mass Index (kg/m**2)", y = "Density")+
     theme_classic()
 ```
+
+The difference between Body Mass Index distributions of diabetes patients and the healthy is still small, but BMI distribution is more right skewed compared to that of the healthy, implying a higher BMI. This is consistent with the fact that BMI is positively correlated with risk of diabetes ([reference](https://care.diabetesjournals.org/content/30/6/1562#:~:text=Lifetime%20risk%20by%20BMI,%3E35%20kg%2Fm2.)). 
+
 ### HDL_Cholesterol
 ```{r}
 mean_cho <- data %>% select(HDL_Cholesterol, diabetes) %>%
@@ -504,7 +543,7 @@ data %>% select(HDL_Cholesterol, diabetes) %>%
     labs(title="Direct HDL-Cholesterol",x="Direct HDL-Cholesterol (mg/dL)", y = "Density")+
     theme_classic()
 ```
-
+According to the American Heart Association, diabetes patients tend to have a higher cholesterol levels ([reference](https://www.heart.org/en/health-topics/diabetes/why-diabetes-matters/cholesterol-abnormalities--diabetes)). This fact is reflected in oure data: the Cholesterol distribution of diabetes patients in general is more right-skewed than that of the healthy.
 
 ## Correlation Plot
 ```{r}
@@ -513,8 +552,13 @@ r <- cor(data, use="complete.obs")
 ggcorrplot(r)
 ```
 
+We then constructed a heatmap to inspect the correlation between features. Not to our surprise, features from the diet category are highly correlated (which makes sense, since if people eat more or less, the amount of their carbonhydrate, sugar, sodium and fat intake will likely increase or decrease accordingly). On the other hand, the high correlation between total family income and income-poverty ratio is also understandable, given that they are likely just a multiple of each other. There are also some other explainable correlations displayed in the heatmap: the correlation between age and marital status, between highest education degree and income-poverty ratio, between daily energy intake and gender, etcetera.
+
+
 # Building Data Pipeline
 ## One-hot encoding
+
+We then use one-hot encoding to convert categorical features into multiple columns that eliminates the unnecessary ordinality between categeories.
 ```{r}
 library(mltools)
 library(data.table)
@@ -530,6 +574,8 @@ data_onehot <- data_onehot %>% mutate(diabetes = as.factor(diabetes))
 ```
 
 ## Train-test split
+
+We then randomly split the data into training set (80%) and testing set (20%).
 ```{r}
 # data_0 <- data_onehot %>% filter(diabetes == 0)
 # data_1 <- data_onehot %>% filter(diabetes == 1)
@@ -807,50 +853,77 @@ confusionMatrix(as.factor(y_pred), as.factor(y_test))
 ```
 ##SVM
 ```{r}
-# SVM PCA, balanced: sensitivity 0.76, specificity 0.65, roc 0.71 Normal-Good
+# SVM PCA, balanced: sensitivity 0.81, specificity 0.55, roc 0.76 Normal-Good
 
-svm <- train(y ~., data = data_bb, method = 'svmLinearWeights2', trControl = trainControl("repeatedcv", number = 10), preProcess = c("center","scale") )
+library(e1071)
 
+svm <- svm(x = X_train_balanced_pca, y = y_train_balanced, scale = TRUE, kernel = 'poly', cross = 10, probability = TRUE)
 
-pre_svm <- predict(svm, X_test_balanced_pca)
+pre_svm <- predict(svm, X_test_balanced_pca, probability = TRUE)
+# print(pre_svm)
 
-confusionMatrix(pre_svm, y_test, positive = "1")
+pre_svm <- attr(pre_svm,"prob")[,2]
 plot_roc(as.numeric(pre_svm))
+# print(pre_svm)
+
+pre_svm <- ifelse(pre_svm > 0.35, 1, 0)
+confusionMatrix(as.factor(pre_svm), y_test, positive = "1")
 
 ```
+
 ```{r}
-# SVM PCA, not balanced: sensitivity 0.01, specificity 1, roc 0.51 Very Bad
+# SVM PCA, not balanced: sensitivity 0.98, specificity 0.14, roc 0.72 Normal
 
+svm <- svm(x = X_train_pca, y = y_train, scale = TRUE, kernel = 'poly', cross = 10, probability = TRUE)
 
-svm <- train(y ~., data = data_bn, method = 'svmLinearWeights2', trControl = trainControl("repeatedcv", number = 10), preProcess = c("center","scale") )
+pre_svm <- predict(svm, X_test_pca, probability = TRUE)
+# print(pre_svm)
 
-
-pre_svm <- predict(svm, X_test_pca)
-
-confusionMatrix(pre_svm,y_test, positive = "1")
+pre_svm <- attr(pre_svm,"prob")[,2]
 plot_roc(as.numeric(pre_svm))
+# print(pre_svm)
+
+pre_svm <- ifelse(pre_svm > 0.1, 1, 0)
+confusionMatrix(as.factor(pre_svm), y_test, positive = "1")
 ```
 ```{r}
-# SVM not PCA, balanced: sensitivity 0.78, specificity 0.70, roc 0.74 Good
+# SVM not PCA, balanced: sensitivity 0.83, specificity 0.66, roc 0.81 Good
 
-svm <- train(y ~., data = data_nb, method = 'svmLinear', trControl = trainControl("repeatedcv", number = 10), preProcess = c("center","scale") )
+svm <- svm(x = X_train_balanced, y = y_train_balanced, scale = TRUE, kernel = 'linear', cross = 10, probability = TRUE)
 
+pre_svm <- predict(svm, X_test, probability = TRUE)
+# print(pre_svm)
 
-pre_svm <- predict(svm, X_test)
-
-confusionMatrix(pre_svm,y_test, positive = "1")
+pre_svm <- attr(pre_svm,"prob")[,2]
 plot_roc(as.numeric(pre_svm))
+# print(pre_svm)
+
+pre_svm <- ifelse(pre_svm > 0.45, 1, 0)
+confusionMatrix(as.factor(pre_svm), y_test, positive = "1")
 ```
+SVM stands for support vector machine. This binary classification algorithm aims to create a hyperplane in the hyperspace of data with features being the dimensions, that split the two classes to different sides as much as possible. In our training, we used linear kernal, did 10-fold cross validation, and trained using dataset with principal component analysis and oversampling, dataset without principal component analysis and with oversampling, dataset with principal component analysis and without oversampling, and dataset without principal component analysis or oversampling. We also normalized each feature before training so that they all have zero mean and unit variance.
+
+Turns out that the best model trained using SVM algorithm is the one trained with dataset oversampled and without principal component analysis. It has a sensitivity of 0.83, a specificity of 0.66, and a 0.81 auc-roc score.
+
+It's not hard to see why SVM performs better in a balanced dataset using oversampling. Since SVM uses penalty to update the hyperplane at each round, if the data is significantly imbalanced, SVM is going to penalize more by the dominant class and affected less by the class with fewer data. In our case, we care more about the class with less instances (the positive class). As a result, it's easy to see that a balanced dataset will produce a better performance.
+
+We suspect the reason that SVM performs better with principal component analysis is that PCA filtered out some spatial information in the 28 features we picked that could be important to the training of SVM.  
+
+
 ```{r}
-# SVM not PCA, not balanced: sensitivity 0.1, specificity 0.98, roc 0.55 Very Bad
+# SVM not PCA, not balanced: sensitivity 0.85, specificity 0.51, roc 0.77 Good 
 
-svm <- train(y ~., data = data_nn, method = 'svmLinearWeights2', trControl = trainControl("repeatedcv", number = 10), preProcess = c("center","scale") )
+svm <- svm(x = X_train, y = y_train, scale = TRUE, kernel = 'linear', cross = 10, probability = TRUE)
 
+pre_svm <- predict(svm, X_test, probability = TRUE)
+# print(pre_svm)
 
-pre_svm <- predict(svm, X_test)
-
-confusionMatrix(pre_svm,y_test, positive = "1")
+pre_svm <- attr(pre_svm,"prob")[,2]
 plot_roc(as.numeric(pre_svm))
+# print(pre_svm)
+
+pre_svm <- ifelse(pre_svm > 0.15, 1, 0)
+confusionMatrix(as.factor(pre_svm), y_test, positive = "1")
 
 ```
 
@@ -859,37 +932,59 @@ plot_roc(as.numeric(pre_svm))
 ```{r}
 library(class)
 
-# KNN pca, balanced: sensitivity 0.73, specificity 0.61, roc 0.67 Normal-Good
+# KNN pca, balanced: sensitivity 0.73, specificity 0.61, roc 0.67  Normal-Good
 
-pre_knn <- knn(X_train_balanced_pca, X_test_balanced_pca , cl = y_train_balanced, k = 18, l = 0, prob = FALSE, use.all = TRUE)
+pre_knn <- knn(X_train_balanced_pca, X_test_balanced_pca , cl = y_train_balanced, k = 18, l = 0, prob = TRUE, use.all = TRUE)
 
-confusionMatrix(pre_knn, y_test, positive = "1")
+pre_knn <- ifelse(pre_knn == 1, attr(pre_knn, "prob"), 1 - attr(pre_knn, "prob"))
 plot_roc(as.numeric(pre_knn))
+
+pre_knn <- ifelse(pre_knn > 0.4, 1, 0)
+confusionMatrix(as.factor(pre_knn), y_test, positive = "1")
+
 ```
+KNN stands for k-nearest neighbor. It assumes that similar objects belongs to the the same class. For each data point in the test set, it finds the nearest k neighbors with classes, look at their classes and assign the class with most vote to the data point. For KNN, we set k to 18, and trained using dataset with principal component analysis and oversampling, dataset without principal component analysis and with oversampling, dataset with principal component analysis and without oversampling, and dataset without principal component analysis or oversampling. 
+
+For KNN, the best model is the one trained with dataset oversampled and with principal component analysis. It has a sensitivity of 0.73, a specificity of 0.61, and a 0.67 auc-roc score.
+
+It's also not a surprise that KNN performs better in a balanced dataset. KNN is, in its essence, a communty-level voting system that considers a majority of vote as a win. So no wonder the dominant class will use its dominance in number to affect the voting result, even when in some cases, data points have some neighbors from the non-dominant class and actually belong to that class themselves. A balanced dataset can avoid much of this negative effect.
+
+KNN requires a dense distribution of data points in the hyperspace of data, and is thus very vulnerable to the curse of dimensionality. With principal component analysis decreasing th dimensions, for KNN, it is imaginable that this help outweighs the loss of information caused by principal component analysis.
 
 ```{r}
 # KNN not pca, balanced: sensitivity 0.34, specificity 0.7, roc 0.52 Bad-Normal
 
-pre_knn <- knn(X_train_balanced, X_test , cl = y_train_balanced, k = 2, l = 0, prob = FALSE, use.all = TRUE)
+pre_knn <- knn(X_train_balanced, X_test , cl = y_train_balanced, k = 2, l = 0, prob = TRUE, use.all = TRUE)
 
-confusionMatrix(pre_knn, y_test, positive = "1")
+pre_knn <- ifelse(pre_knn == 1, attr(pre_knn, "prob"), 1 - attr(pre_knn, "prob"))
 plot_roc(as.numeric(pre_knn))
+
+pre_knn <- ifelse(pre_knn > 0.25, 1, 0)
+confusionMatrix(as.factor(pre_knn), y_test, positive = "1")
 ```
 ```{r}
 # KNN pca, not balanced: sensitivity 0.21, specificity 0.86, roc 0.54 Very bad
 
-pre_knn <- knn(X_train_pca, X_test_pca , cl = y_train, k = 2, l = 0, prob = FALSE, use.all = TRUE)
+pre_knn <- knn(X_train_pca, X_test_pca , cl = y_train, k = 2, l = 0, prob = TRUE, use.all = TRUE)
 
-confusionMatrix(pre_knn, y_test, positive = "1")
+pre_knn <- ifelse(pre_knn == 1, attr(pre_knn, "prob"), 1 - attr(pre_knn, "prob"))
 plot_roc(as.numeric(pre_knn))
+
+pre_knn <- ifelse(pre_knn > 0.1, 1, 0)
+confusionMatrix(as.factor(pre_knn), y_test, positive = "1")
+
 ```
 ```{r}
 # KNN not pca, not balanced: sensitivity 0.2, specificity 0.83, roc 0.51 Very Bad
 
-pre_knn <- knn(X_train, X_test, cl = y_train, k = 2, l = 0, prob = FALSE, use.all = TRUE)
+pre_knn <- knn(X_train, X_test, cl = y_train, k = 2, l = 0, prob = TRUE, use.all = TRUE)
 
-confusionMatrix(pre_knn, y_test, positive = "1")
+pre_knn <- ifelse(pre_knn == 1, attr(pre_knn, "prob"), 1 - attr(pre_knn, "prob"))
 plot_roc(as.numeric(pre_knn))
+
+pre_knn <- ifelse(pre_knn > 0.1, 1, 0)
+confusionMatrix(as.factor(pre_knn), y_test, positive = "1")
+
 ```
 
 
