@@ -36,7 +36,7 @@ In order to train our model, we perform one-hot encoding, oversampling and use p
 
 We then train our model using five different algorithms: logistic regression, random forest, gradient boosting, support vector machine and k nearest neighbor. For each algorithm, we train with four different training datasets: a dataset without oversampling or PCA, a dataset with oversampling but without PCA, a dataset with PCA but without oversampling, and a dataset with both oversampling and PCA. 
 
-#### Logistic Regression: the best one is balanced but without PCA
+#### Logistic Regression: the best one is balanced but trained without PCA
 
 <table>
   <tr>
@@ -46,6 +46,58 @@ We then train our model using five different algorithms: logistic regression, ra
   <tr>
     <td><img src="./image/glm_cm.png" width=300 height=400></td>
     <td><img src="./image/glm_roc.png" width=500 height=400></td>
+  </tr>
+ </table>
+
+#### Random Forest: the best one is balanced but trained without PCA
+
+<table>
+  <tr>
+    <td>Confusion Matrix</td>
+     <td>ROC Curve</td>
+  </tr>
+  <tr>
+    <td><img src="./image/rf_cm.png" width=300 height=400></td>
+    <td><img src="./image/rf_roc.png" width=500 height=400></td>
+  </tr>
+ </table>
+ 
+ #### Boosting: the best one is not balanced and trained without PCA
+ 
+ <table>
+  <tr>
+    <td>Confusion Matrix</td>
+     <td>ROC Curve</td>
+  </tr>
+  <tr>
+    <td><img src="./image/b_cm.png" width=300 height=400></td>
+    <td><img src="./image/b_roc.png" width=500 height=400></td>
+  </tr>
+ </table>
+
+ #### Support Vector Machine: the best one is balanced but trained without PCA
+ 
+ <table>
+  <tr>
+    <td>Confusion Matrix</td>
+     <td>ROC Curve</td>
+  </tr>
+  <tr>
+    <td><img src="./image/svm_cm.png" width=300 height=400></td>
+    <td><img src="./image/svm_roc.png" width=500 height=400></td>
+  </tr>
+ </table>
+ 
+ #### K Nearest Neighbor: the best one is balanced and trained with PCA
+ 
+ <table>
+  <tr>
+    <td>Confusion Matrix</td>
+     <td>ROC Curve</td>
+  </tr>
+  <tr>
+    <td><img src="./image/knn_cm.png" width=300 height=400></td>
+    <td><img src="./image/knn_roc.png" width=500 height=400></td>
   </tr>
  </table>
 
