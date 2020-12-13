@@ -111,8 +111,7 @@ data <- left_join(demo_clean, dat, by = "SEQN") %>% drop_na()
 
 ```
 
-1. In order to decrease the number of categories inside feature "marital status", we reassign answers representing "Refused", "Don't know" and NA values to the category "Not Specified".
-2. To simplify of our classification problem, we decided to delete rows where feature "highest education"is only that only rarely appear in our dataset.
+In order to decrease the number of categories inside feature "marital status", we reassign answers representing "Refused", "Don't know" and NA values to the category "Not Specified".
 
 
 ## Examination Data Preprocessing
@@ -148,6 +147,7 @@ data$diabetes[data$diabetes==2]<-0
 data <- data %>% filter(highest_edu != 7 & highest_edu != 9 & marital_status != 0)
 ```
 
+To simplify our classification problem, we decided to delete rows where the value of feature "highest education" only rarely appear in our dataset.
 
 # Data Visualization
 
@@ -506,17 +506,6 @@ print(sodium)
 In terms of diet distribution, patients diagnosed with diabetes don't differ much from the healthy population. But there is one consistent pattern across the five graphs: diagnosed patients in general tend to consume less compared to the healthy. Given that all diabetes patients already know there diagnosis and will thus pay more attention to their daily consumption, this difference is reasonable.
 
 ## Histogram
-```{r}
-# data %>% select(total_family_income, diabetes) %>%
-#     mutate(total_family_income = as.numeric(total_family_income), diabetes = ifelse(diabetes == 1, "Diabetes", "No Diabetes")) %>%
-#     ggplot(aes(x=total_family_income, color=diabetes, fill=diabetes)) +
-#     geom_histogram(aes(y=..density..), position="identity", alpha=0.5, bins = 15) +
-#     geom_density(alpha=0.6) +
-#     scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9"))+
-#     scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9"))+
-#     labs(title="Total Family Income",x="Total Family Income", y = "Density")+
-#     theme_classic()
-```
 
 ### Income vs Poverty
 ```{r}
@@ -619,20 +608,6 @@ data_onehot <- data_onehot %>% mutate(diabetes = as.factor(diabetes))
 ## Train-test split
 
 We then randomly split the data into training set (80%) and testing set (20%).
-```{r}
-# data_0 <- data_onehot %>% filter(diabetes == 0)
-# data_1 <- data_onehot %>% filter(diabetes == 1)
-# data_0_sample <- sample_n(data_0, nrow(data_1))
-# data_sample <- rbind(data_0_sample, data_1)
-#
-# train_index <- createDataPartition(data_sample$diabetes, times = 1, p = 0.8, list = FALSE)
-# train_set <- data_sample[train_index, ]
-# test_set <- data_sample[-train_index, ]
-# X_train <- train_set %>% select(-c(diabetes))
-# y_train <- train_set$diabetes
-# X_test <- test_set %>% select(-c(diabetes))
-# y_test <- test_set$diabetes
-```
 
 ```{r}
 library(caret)
@@ -787,7 +762,7 @@ plot(sensitivity_ci, type="shape", col="lightblue")
 
 ```{r}
 # LR: balanced, not PCA
-# library(pROC)
+library(pROC)
 train_regression_balanced <- cbind(X_train_balanced, y_train_balanced) %>% rename(diabetes = y_train_balanced)
 glm_fit_balanced <- glm(diabetes ~ ., data = train_regression_balanced, family=binomial)
 summary(glm_fit_balanced)
@@ -855,8 +830,8 @@ library(ROSE)
 rf_classifier = randomForest(x = X_train_balanced, y = y_train_balanced, xtest = X_test, ytest=y_test, ntree=100, mtry=5, importance=TRUE, keep.forest=TRUE, trControl = tr, nodesize = 5, maxnodes = 15) #maxnodes is the most important
 #rf_classifier
 pre_prob = predict(rf_classifier, X_test, type = "prob")[,1]
-pre = ifelse(pre_prob >= 0.52, 0, 1)
-confusionMatrix(as.factor(pre), as.factor(y_test))
+pre = ifelse(pre_prob >= 0.58, 0, 1)
+confusionMatrix(as.factor(pre), as.factor(y_test), positive = "1")
 plot_roc(pre_prob)
 ```
 We trained Random Forest models on four training sets, with/without PCA and balanced/not balanced, respectively. After carefully tuning parameters and plotting ROC curves, we found that random forest models are very sensitive to imbalanced data. In our original training set, there are 1549 negative(0) observations, but only 500 positive(1) observations. Therefore, there is a significant probability that a bootstrap sample contains few or even none of the minority class, resulting in a tree with poor performance for predicting the minority class.(https://statistics.berkeley.edu/tech-reports/666) Indeed, two of our models, trained by original imbalanced data, can hardly discriminate between 0 and 1. Instead, they classify almost everyone into the negative class.
@@ -882,8 +857,8 @@ boost=gbm(y ~.,
               n.minobsinnode = 20,
               n.trees = 150) #reduce n.trees to increase sensitivity
 pre <- predict(boost, newdata = X_test, type = "response", n.trees = 200)[,,1][,1]
-y_pred <- ifelse(as.numeric(pre)>0.87,0,1)
-confusionMatrix(as.factor(y_pred), as.factor(y_test))
+y_pred <- ifelse(as.numeric(pre)>0.91,0,1)
+confusionMatrix(as.factor(y_pred), as.factor(y_test), positive = "1")
 plot_roc(as.numeric(pre))
 ```
 Gradient boosting models tell a different story. Similarly, as training Random Forest model, we tried on four training datasets with/without PCA and balanced/non-balanced.
@@ -892,6 +867,7 @@ However, in this case, PCA had a strong negative impact on model performance. On
 ##SVM
 
 ```{r}
+library(e1071)
 # SVM not PCA, balanced: sensitivity 0.83, specificity 0.66, roc 0.81 Good
 
 svm <- svm(x = X_train_balanced, y = y_train_balanced, scale = TRUE, kernel = 'linear', cross = 10, probability = TRUE)
@@ -903,12 +879,12 @@ pre_svm <- attr(pre_svm,"prob")[,2]
 plot_roc(as.numeric(pre_svm))
 # print(pre_svm)
 
-pre_svm <- ifelse(pre_svm > 0.45, 1, 0)
+pre_svm <- ifelse(pre_svm > 0.35, 1, 0)
 confusionMatrix(as.factor(pre_svm), y_test, positive = "1")
 ```
 SVM stands for support vector machine. This binary classification algorithm aims to create a hyperplane in the hyperspace of data with features being the dimensions, that split the two classes to different sides as much as possible. In our training, we used linear kernal, did 10-fold cross validation, and trained using dataset with principal component analysis and oversampling, dataset without principal component analysis and with oversampling, dataset with principal component analysis and without oversampling, and dataset without principal component analysis or oversampling. We also normalized each feature before training so that they all have zero mean and unit variance.
 
-Turns out that the best model trained using SVM algorithm is the one trained with dataset oversampled and without principal component analysis. It has a sensitivity of 0.83, a specificity of 0.66, and a 0.81 auc-roc score.
+Turns out that the best model trained using SVM algorithm is the one trained with dataset oversampled and without principal component analysis.
 
 It's not hard to see why SVM performs better in a balanced dataset using oversampling. Since SVM uses penalty to update the hyperplane at each round, if the data is significantly imbalanced, SVM is going to penalize more by the dominant class and affected less by the class with fewer data. In our case, we care more about the class with less instances (the positive class). As a result, it's easy to see that a balanced dataset will produce a better performance.
 
@@ -926,14 +902,14 @@ pre_knn <- knn(X_train_balanced_pca, X_test_balanced_pca , cl = y_train_balanced
 pre_knn <- ifelse(pre_knn == 1, attr(pre_knn, "prob"), 1 - attr(pre_knn, "prob"))
 plot_roc(as.numeric(pre_knn))
 
-pre_knn <- ifelse(pre_knn > 0.4, 1, 0)
+pre_knn <- ifelse(pre_knn > 0.25, 1, 0)
 confusionMatrix(as.factor(pre_knn), y_test, positive = "1")
 
 ```
 
 KNN stands for k-nearest neighbor. It assumes that similar objects belongs to the the same class. For each data point in the test set, it finds the nearest k neighbors with classes, look at their classes and assign the class with most vote to the data point. For KNN, we set k to 18, and trained using dataset with principal component analysis and oversampling, dataset without principal component analysis and with oversampling, dataset with principal component analysis and without oversampling, and dataset without principal component analysis or oversampling.
 
-For KNN, the best model is the one trained with dataset oversampled and with principal component analysis. It has a sensitivity of 0.73, a specificity of 0.61, and a 0.67 auc-roc score.
+For KNN, the best model is the one trained with dataset oversampled and with principal component analysis. 
 
 It's also not a surprise that KNN performs better in a balanced dataset. KNN is, in its essence, a communty-level voting system that considers a majority of vote as a win. So no wonder the dominant class will use its dominance in number to affect the voting result, even when in some cases, data points have some neighbors from the non-dominant class and actually belong to that class themselves. A balanced dataset can avoid much of this negative effect.
 
