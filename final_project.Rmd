@@ -632,19 +632,14 @@ X_test_balanced_pca = data.frame(predict(pca_balanced_part, newdata = X_test))
 
 ## Linear Regression
 ```{r}
-#Logistics regression
+# LR: not balanced, no pca
 library(pROC)
-# train_regression <- cbind(X_train_pca, y_train) %>% rename(diabetes = y_train)
 train_regression <- cbind(X_train, y_train) %>% rename(diabetes = y_train)
-# glm_fit <- glm(diabetes ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9 + PC10 + PC11 + PC12 + PC13 + PC14 + PC15 + PC16 + PC17 + PC18 + PC19 + PC20, data = train_regression, family=binomial)
-# glm_fit <- glm(diabetes ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9 + PC10, data = train_regression, family=binomial)
 glm_fit <- glm(diabetes ~ ., data = train_regression, family=binomial)
 summary(glm_fit)
 glm_predict_prob <- predict(glm_fit, X_test, type="response")
-glm_predict <- ifelse(glm_predict_prob >= 0.5, 1, 0)
-# table(glm_predict, y_test)
-# mean(glm_predict == y_test)
-confusionMatrix(as.factor(glm_predict), as.factor(y_test))
+glm_predict <- ifelse(glm_predict_prob >= 0.1, 1, 0)
+confusionMatrix(as.factor(glm_predict), as.factor(y_test), positive = "1")
 roc_curve <- roc(y_test, glm_predict_prob, 
                  smoothed = TRUE,
                  # arguments for ci
@@ -655,6 +650,90 @@ roc_curve <- roc(y_test, glm_predict_prob,
 sensitivity_ci <- ci.se(roc_curve)
 plot(sensitivity_ci, type="shape", col="lightblue")
 ```
+```{r}
+# LR: not balanced, no pca, cv
+train_control <- trainControl(method = "cv", number = 10)
+glm_cv <- train(diabetes ~ .,
+               data = train_regression,
+               trControl = train_control,
+               method = "glm",
+               family=binomial())
+
+summary(glm_cv)
+glm_predict_prob <- predict(glm_cv, X_test, type="prob")
+glm_predict <- ifelse(glm_predict_prob >= 0.5, 1, 0)
+glm_predict <- ifelse(glm_predict[, 1] == 1, 0, 1)
+confusionMatrix(as.factor(glm_predict), as.factor(y_test), positive = "1")
+roc_curve <- roc(y_test, glm_predict_prob[, 1], 
+                 smoothed = TRUE,
+                 # arguments for ci
+                 ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+                 # arguments for plot
+                 plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+                 print.auc=TRUE, show.thres=TRUE)
+sensitivity_ci <- ci.se(roc_curve)
+plot(sensitivity_ci, type="shape", col="lightblue")
+```
+
+```{r}
+# LR: not balanced, with PCA
+# library(pROC)
+train_regression_pca <- cbind(X_train_pca, y_train) %>% rename(diabetes = y_train)
+glm_fit_pca <- glm(diabetes ~ ., data = train_regression_pca, family=binomial)
+summary(glm_fit_pca)
+glm_predict_prob <- predict(glm_fit_pca, X_test_pca, type="response")
+glm_predict <- ifelse(glm_predict_prob >= 0.5, 1, 0)
+confusionMatrix(as.factor(glm_predict), as.factor(y_test), positive = "1")
+roc_curve <- roc(y_test, glm_predict_prob, 
+                 smoothed = TRUE,
+                 # arguments for ci
+                 ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+                 # arguments for plot
+                 plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+                 print.auc=TRUE, show.thres=TRUE)
+sensitivity_ci <- ci.se(roc_curve)
+plot(sensitivity_ci, type="shape", col="lightblue")
+```
+```{r}
+# LR: balanced, not PCA
+# library(pROC)
+train_regression_balanced <- cbind(X_train_balanced, y_train_balanced) %>% rename(diabetes = y_train_balanced)
+glm_fit_balanced <- glm(diabetes ~ ., data = train_regression_balanced, family=binomial)
+summary(glm_fit_balanced)
+glm_predict_prob <- predict(glm_fit_balanced, X_test, type="response")
+glm_predict <- ifelse(glm_predict_prob >= 0.37, 1, 0)
+confusionMatrix(as.factor(glm_predict), as.factor(y_test), positive = "1")
+roc_curve <- roc(y_test, glm_predict_prob, 
+                 smoothed = TRUE,
+                 # arguments for ci
+                 ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+                 # arguments for plot
+                 plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+                 print.auc=TRUE, show.thres=TRUE)
+sensitivity_ci <- ci.se(roc_curve)
+plot(sensitivity_ci, type="shape", col="lightblue")
+```
+
+```{r}
+# LR: balanced, with PCA
+# library(pROC)
+train_regression_balanced_pca <- cbind(X_train_balanced_pca, y_train_balanced) %>% rename(diabetes = y_train_balanced)
+glm_fit_balanced_pca <- glm(diabetes ~ ., data = train_regression_balanced_pca, family=binomial)
+summary(glm_fit_balanced_pca)
+glm_predict_prob <- predict(glm_fit_balanced_pca, X_test_balanced_pca, type="response")
+glm_predict <- ifelse(glm_predict_prob >= 0.37, 1, 0)
+confusionMatrix(as.factor(glm_predict), as.factor(y_test), positive = "1")
+roc_curve <- roc(y_test, glm_predict_prob, 
+                 smoothed = TRUE,
+                 # arguments for ci
+                 ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+                 # arguments for plot
+                 plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+                 print.auc=TRUE, show.thres=TRUE)
+sensitivity_ci <- ci.se(roc_curve)
+plot(sensitivity_ci, type="shape", col="lightblue")
+```
+
 
 #RF
 ```{r}
@@ -690,6 +769,7 @@ boost=gbm(y ~.,
               n.minobsinnode = 10,
               n.trees = 200)
 ```
+
 ```{r}
 pre <- predict(boost, newdata = X_test_pca, type = "response", n.trees = 200)
 pred <- pre[,,1][,1]
