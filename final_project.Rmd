@@ -124,7 +124,7 @@ pie_chart<- function(diab, cat, level) {
     coord_polar("y", start=0)
 }
 
-cats <- c("hightest_edu", "marital_status", "gender", "race", "total_family_income")
+cats <- c("highest_edu", "marital_status", "gender", "race", "total_family_income")
 level_edu <- c("Less than 9th grade","9-11th grade (Includes 12th grade with no diploma)",
                "High school graduate/GED or equivalent",	
                "Some college or AA degree",
@@ -772,15 +772,6 @@ library(randomForest)
 library(ROSE)
 #PCA, balanced: 
 tr <- trainControl(method = "cv", number = 10)
-for (mtry in c(2,5,8)){
-  for (nodesize in c(1,5,9)){
-      print(paste("mtry =" , mtry , ",nodesize =" , nodesize , ",maxnodes" , maxnodes))
-rf_classifier = randomForest(x = X_train_balanced_pca, y = y_train_balanced, xtest = X_test_balanced_pca, ytest=y_test, ntree=100, importance=TRUE, keep.forest=TRUE, trControl = tr, maxnodes = 10)
-#rf_classifier
-pre = predict(rf_classifier, X_test_balanced_pca, type = "response")
-print(confusionMatrix(as.factor(pre), as.factor(y_test)))
-  }
-  }
 
 #plot_roc(as.numeric(pre))
 
