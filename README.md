@@ -31,8 +31,9 @@ We perform some explorative analysis over the features we selected to examine if
 
 
 ### Data Pipeline
-### Machine Learning Models
 In order to train our model, we perform one-hot encoding, oversampling and use principle component analysis to help decrease the number of features.
+
+### Machine Learning Models
 
 We then train our model using five different algorithms: logistic regression, random forest, gradient boosting, support vector machine and k nearest neighbor. For each algorithm, we train with four different training datasets: a dataset without oversampling or PCA, a dataset with oversampling but without PCA, a dataset with PCA but without oversampling, and a dataset with both oversampling and PCA. 
 
@@ -142,3 +143,5 @@ Thus, people whoever get positive results from our model is suggested to conduct
 [RMD file](https://github.com/yuxinxu77/BST260-FinalProject/blob/main/final_project.Rmd)
 
 [HTML file](https://github.com/yuxinxu77/BST260-FinalProject/blob/main/final_project.html)
+
+[Shiny App](https://github.com/yuxinxu77/BST260-FinalProject/blob/main/BST260_final_project/app.R)
