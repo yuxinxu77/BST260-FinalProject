@@ -116,6 +116,9 @@ data <- data %>% filter(highest_edu != 7 & highest_edu != 9 & marital_status != 
 
 # Data Visualization
 ## Pie Chart
+According to pie charts, we found that the distributions of some features among people with/without diabetes are quite different. 
+
+
 ```{r}
 #pie chart
 pie_chart<- function(diab, cat, level) {
@@ -157,17 +160,36 @@ level_income <- c("$0 to $4,999",
 ###### Questions ##########
 pie_chart(0, "highest_edu", level_edu)
 pie_chart(1,"highest_edu", level_edu[-6])
+```
+
+First, for the highest education level, people with diabetes tend to have lower educational background than the other group. A greater fraction of people with diabetes have education levels: less than 9th grade, 9-11th grade, and high school graduate, than that of the non-diabetes group, while the non-diabetes group has more college graduate or above education background.
+
+```{r}
 pie_chart(0, "marital_status", level_marital)
 pie_chart(1, "marital_status", level_marital[-7])
+```
+
+For marital status, more people are married or divorced in the diabetes group compared to the non-diabetes group. However, since marital status highly depends on age, and age is known to be a key risk factor for diabetes, this factor could be a confounder. 
+
+```{r}
 pie_chart(0, "gender", level_gender)
 pie_chart(1, "gender", level_gender)
+```
+
+The pie charts of gender show an interesting point. While females are slightly more than males in the non-diabetes group, more males appear in the diabetes group. This may tell us that males have a higher risk of diabetes than females. 
+
+```{r}
 pie_chart(0, "race", level_race)
 pie_chart(1, "race", level_race)
+```
+
+The distributions of races in these two groups are very similar, except that the diabetes group has more Mexican Americans and less Non-Hispanic Whites. Overall, race seems not to be a key feature for predicting diabetes. 
+
+```{r}
 pie_chart(0, "total_family_income", level_income)
 pie_chart(1, "total_family_income", level_income)
 ```
-
-
+Lastly, looking at total family income, we might find that the fraction of people with the highest income ($100,000 and over, $75,000 to $99,999, and $65,000 to $74,999) in the non-diabetes group is greater than the diabetes group. 
 ## Back to Back Histogram
 ### Age
 ```{r}
@@ -757,31 +779,9 @@ plot(sensitivity_ci, type="shape", col="lightblue")
 ```
 
 #RF
-```{r}
-library(randomForest)
-library(ROSE)
-#No PCA, not balanced: TERRIBLE
-tr <- trainControl(method = "cv", number = 10)
-rf_classifier = randomForest(x = X_train, y = y_train, xtest = X_test, ytest=y_test, ntree=100, mtry=4, importance=TRUE, keep.forest=TRUE, trControl = tr)
-rf_classifier
-pre = predict(rf_classifier, X_test, type = "response")
-confusionMatrix(as.factor(pre), as.factor(y_test))
-plot_roc(as.numeric(pre))
-
-```
 
 ```{r}
-library(randomForest)
-library(ROSE)
-#PCA, balanced: 
-tr <- trainControl(method = "cv", number = 10)
-
-#plot_roc(as.numeric(pre))
-
-```
-
-```{r}
-#best rf for No PCA, balanced GOOD
+#No PCA, balanced GOOD
 rf_classifier = randomForest(x = X_train_balanced, y = y_train_balanced, xtest = X_test, ytest=y_test, ntree=100, mtry=5, importance=TRUE, keep.forest=TRUE, trControl = tr, nodesize = 5, maxnodes = 15) #maxnodes is the most important
 #rf_classifier
 pre_prob = predict(rf_classifier, X_test, type = "prob")[,1]
@@ -795,28 +795,6 @@ Furthermore, in the two models trained by balanced data, we found that the model
 
 Finally, from all Random Forest models, we chose the model trained by balanced data without PCA. The area under the ROC curve (AUC) is 0.83, suggesting that it is a fairly good classification model. As high sensitivity is our first goal, we set a threshold such that sensitivity is high enough while specificity is acceptable.  
 
-
-
-```{r}
-#PCA, not balanced: emmm
-tr <- trainControl(method = "cv", number = 10)
-rf_classifier = randomForest(x = X_train_pca, y = y_train, xtest = X_test_pca, ytest=y_test, ntree=100, mtry=5, importance=TRUE, keep.forest=TRUE, trControl = tr, nodesize = 5, )
-#rf_classifier
-pre = predict(rf_classifier, X_test_pca, type = "response")
-print(confusionMatrix(as.factor(pre), as.factor(y_test)))
-
-
-```
-
-```{r}
-#pca balanced GOOD
-rf_classifier = randomForest(x = X_train_balanced_pca, y = y_train_balanced, xtest = X_test_balanced_pca, ytest=y_test, ntree=100, importance=TRUE, keep.forest=TRUE, trControl = tr, maxnodes = 15)
-#rf_classifier
-pre_prob = predict(rf_classifier, X_test_balanced_pca, type = "prob")[,1]
-pre = ifelse(pre_prob >= 0.5, 0, 1)
-confusionMatrix(as.factor(pre), as.factor(y_test))
-plot_roc(pre_prob)
-```
 
 # Boosting
 ```{r}
@@ -841,60 +819,6 @@ plot_roc(as.numeric(pre))
 Gradient boosting models tell a different story. Similarly, as training Random Forest model, we tried on four training datasets with/without PCA and balanced/non-balanced. 
 However, in this case, PCA had a strong negative impact on model performance. On the other hand, the boosting model is very robust to handle imbalanced data: both models training by balanced/imbalanced data give similar result, with AUC around 0.83. To keep the model training process simple, we chose the one trained by original imbalanced data. 
 
-```{r}
-#no pca, balanced GOOD
-data_nb = X_train_balanced
-data_nb$y = y_train_balanced
-
-boost=gbm(y ~.,
-              data = data_nb,
-              distribution = "multinomial",
-              cv.folds = 10,
-              shrinkage = .1,
-              n.minobsinnode = 10,
-              n.trees = 100) #reduce n.trees to increase sensitivity
-pre <- predict(boost, newdata = X_test, type = "response", n.trees = 200)
-pred <- pre[,,1][,1]
-y_pred <- ifelse(as.numeric(pred)>0.6,0,1)
-confusionMatrix(as.factor(y_pred), as.factor(y_test))
-plot_roc(as.numeric(pred))
-```
-
-```{r}
-#pca, not balanced TERRIBLE
-data_bn = X_train_pca
-data_bn$y = y_train
-
-boost=gbm(y ~.,
-              data = data_bn,
-              distribution = "multinomial",
-              cv.folds = 10,
-              shrinkage = .3,
-              n.minobsinnode = 10,
-              n.trees = 50) #reduce n.trees to increase sensitivity
-pre <- predict(boost, newdata = X_test_pca, type = "response", n.trees = 200)
-pred <- pre[,,1][,1]
-y_pred <- ifelse(as.numeric(pred)>0.7,0,1)
-confusionMatrix(as.factor(y_pred), as.factor(y_test))
-```
-
-```{r}
-#pca,balanced emmm
-data_bb = X_train_balanced_pca
-data_bb$y = y_train_balanced
-
-boost=gbm(y ~.,
-              data = data_bb,
-              distribution = "multinomial",
-              cv.folds = 10,
-              shrinkage = .01,
-              n.minobsinnode = 10,
-              n.trees = 100) #reduce n.trees to increase sensitivity
-pre <- predict(boost, newdata = X_test_pca, type = "response", n.trees = 200)
-pred <- pre[,,1][,1]
-y_pred <- ifelse(as.numeric(pred)>0.5,0,1)
-confusionMatrix(as.factor(y_pred), as.factor(y_test))
-```
 ##SVM
 ```{r}
 library('e1071')
