@@ -1,31 +1,35 @@
 ---
 title: "BST260 Final Project"
-author: "Junyi Guo"
-date: "12/3/2020"
+subtitle: "Predicting Risk of Diabetes"
+author: "Junyi Guo, Runting Yang, Yuxin Xu"
+date: "12/13/2020"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-## BST260 FINAL PROJECT {.tabset .tabset-fade}
+## {.tabset .tabset-fade}
 
-# Overview and Motivation
+### Home Page
+
+#### Overview and Motivation
+
 Diabetes is a group of metabolic disorders characterized by a high blood sugar level over a prolonged period of time. Diabetes prevalence has been rising more rapidly among adults over 18 years of age from 4.7% in 1980 to 8.5% in 2014. On the one hand, the onset of type 2 diabetes is highly associated with an unhealthy lifestyle. On the other hand, diabetes is a major cause of various diseases and was the seventh leading cause of death in 2016. (data from WHO)
 Given this situation, our motivation for this project is: first, to find and analyze possible risk factors of diabetes, such as diet, smoking, health condition, and demographic and socioeconomic factors. Based on our results, we could encourage people to follow healthier lifestyles and therefore to delay or avoid the onset of type 2 diabetes. Secondly, we would like to study the potential health-related influences of diabetes according to their lab test results and questionnaire answers. Finally, we would like to forecast whether an individual would develop Diabetes given the current living condition. We hope that these findings can lead to a better understanding of diabetes and help physicians and patients to prevent, treat, control, and manage diabetes.  
 
-# Related Work
+#### Related Work
 After we decided to do a project revolving around diabetes, we looked through some papers related to the topic, and found [one](https://bmcendocrdisord.biomedcentral.com/articles/10.1186/s12902-019-0436-6) constructing predictive models for diabetes diagnosis. It occurred to us that we want to try out something similar.
 
-# Initial Question
+#### Initial Question
 We are interested in the following question:
+
 * Do diabetes patients above age 20 tend to follow a specific demographic pattern?
 * Do diabetes patients above age 20 tend to follow a specific socioeconomic pattern?
 * Do diabetes patients above age 20 tend to follow a specific diet pattern(logically, they should, but do * they really follow)?
 * Given certain information on demographics, socioeconomic status and diet pattern, how likely can we correctly predict whether patients above age 20 have been diagnosed with diabetes or not?
 
-
-# Data Source and Data Preprocessing
+### Data Source and Data Preprocessing
 
 We looked for relevant data on diabetes and found the dataset [`National Health and Nutrition Examination Survey`](https://www.cdc.gov/nchs/nhanes/about_nhanes.htm) collection by CDC from 2017 to 2018. It contains more than ten thousand interviewees' data that cover a variety of topics: demographics, examination, health status, diet, lab results, etcetera. We used a specific subset of the data that contains 8897 interviewees who participated in the diabetes survey. After some preprocessing and dropping NA rows and certain age groups, our explorative analysis and model training eventually ends up with a dataset of 3811 individuals.
 
@@ -45,7 +49,7 @@ There are a few steps that we performed across all categories of data:
 
 But there are still some steps that are special to specific categories that we went through:
 
-## Diet Data Preprocessing
+#### Diet Data Preprocessing
 ```{r}
 # read in datasets
 diet_1 <- read.xport('./data/DR1TOT_J.XPT')
@@ -84,11 +88,11 @@ dat <- dat %>% filter(diabetes == 1 | diabetes == 2)
 Since in diet data, all wanted features may have both data from day 1 and day 2, we replace the values with the mean from the two days if both exists, and keep the value where on data from one of the day exists.
 
 
-## Target data
+#### Target data
 
 For target data, we filtered the dataset to make sure that the target variable ("If doctors told the participant in the patients in the past that they have diabetes") only contains factors that represent yes and no.
 
-## Demographic Data Preprocessing
+#### Demographic Data Preprocessing
 ```{r}
 demo <- read.xport("./data/DEMO_J.XPT")
 demo_clean <- demo %>% select(SEQN, DMDEDUC2, DMDMARTL, INDFMIN2, INDFMPIR,
@@ -114,7 +118,7 @@ data <- left_join(demo_clean, dat, by = "SEQN") %>% drop_na()
 In order to decrease the number of categories inside feature "marital status", we reassign answers representing "Refused", "Don't know" and NA values to the category "Not Specified".
 
 
-## Examination Data Preprocessing
+#### Examination Data Preprocessing
 ```{r}
 # Add BMI to the cleaned data and drop any rows with NULL values
 # 5631 observation left
@@ -124,7 +128,7 @@ data <- left_join(data, exam %>% select(SEQN, BMXBMI), by = "SEQN") %>%
                     drop_na()
 ```
 
-## Lab Data Preprocessing
+#### Lab Data Preprocessing
 ```{r}
 # Add HDL_Cholesterol to the cleaned data and drop any rows with NULL values
 # 5205 observation left
@@ -136,25 +140,25 @@ data <- left_join(data, lab3 %>% select(SEQN, LBDHDD), by = "SEQN") %>%
   drop_na()
 ```
 
-## Reassign Diabetes value
+#### Reassign Diabetes value
 ```{r}
 #revalue "no diabetes" from 2 to 0
 data$diabetes[data$diabetes==2]<-0
 ```
 
-## Remove extremely infrequent categorical value
+#### Remove extremely infrequent categorical value
 ```{r}
 data <- data %>% filter(highest_edu != 7 & highest_edu != 9 & marital_status != 0)
 ```
 
 To simplify our classification problem, we decided to delete rows where the value of feature "highest education" only rarely appear in our dataset.
 
-# Data Visualization
+### Data Visualization
 
 We performed some explorative analysis over the features we selected to examine if they seem to relate to our target variable (diabetes y/n). We first looked at the categorical features.
 
 
-## Pie Chart
+#### Pie Chart
 According to pie charts, we found that the distributions of some features among people with/without diabetes are quite different.
 
 
@@ -168,7 +172,7 @@ pie_chart<- function(diab, cat, level) {
     coord_polar("y", start=0)
 }
 
-cats <- c("hightest_edu", "marital_status", "gender", "race", "total_family_income")
+cats <- c("highest_edu", "marital_status", "gender", "race", "total_family_income")
 level_edu <- c("Less than 9th grade","9-11th grade (Includes 12th grade with no diploma)",
                "High school graduate/GED or equivalent",
                "Some college or AA degree",
@@ -196,12 +200,18 @@ level_income <- c("$0 to $4,999",
                   "$75,000 to $99,999",
                   "$100,000 and Over")
 
-###### Questions ##########
+```
+
+##### Highest Education
+
+```{r}
 pie_chart(0, "highest_edu", level_edu)
 pie_chart(1,"highest_edu", level_edu[-6])
 ```
 
 First, for the highest education level, people with diabetes tend to have lower educational background than the other group. A greater fraction of people with diabetes have education levels: less than 9th grade, 9-11th grade, and high school graduate, than that of the non-diabetes group, while the non-diabetes group has more college graduate or above education background.
+
+##### Marital Status
 
 ```{r}
 pie_chart(0, "marital_status", level_marital)
@@ -210,12 +220,16 @@ pie_chart(1, "marital_status", level_marital[-7])
 
 For marital status, more people are married or divorced in the diabetes group compared to the non-diabetes group. However, since marital status highly depends on age, and age is known to be a key risk factor for diabetes, this factor could be a confounder.
 
+##### Gender
+
 ```{r}
 pie_chart(0, "gender", level_gender)
 pie_chart(1, "gender", level_gender)
 ```
 
 The pie charts of gender show an interesting point. While females are slightly more than males in the non-diabetes group, more males appear in the diabetes group. This may tell us that males have a higher risk of diabetes than females.
+
+##### Race
 
 ```{r}
 pie_chart(0, "race", level_race)
@@ -224,6 +238,7 @@ pie_chart(1, "race", level_race)
 
 The distributions of races in these two groups are very similar, except that the diabetes group has more Mexican Americans and less Non-Hispanic Whites. Overall, race seems not to be a key feature for predicting diabetes.
 
+##### Total Family Income
 ```{r}
 pie_chart(0, "total_family_income", level_income)
 pie_chart(1, "total_family_income", level_income)
@@ -231,8 +246,10 @@ pie_chart(1, "total_family_income", level_income)
 Lastly, looking at total family income, we might find that the fraction of people with the highest income ($100,000 and over, $75,000 to $99,999, and $65,000 to $74,999) in the non-diabetes group is greater than the diabetes group.
 
 
-## Back to Back Histogram
-### Age
+#### Back to Back Histogram
+
+##### Age
+
 ```{r}
 # back to back histogram: age
 level_age <- c("[0-10)","[10-20)", "[20-30)", "[30-40)", "[40-50)", "[50-60)","[60-70)", "[70-80)","[80-90)", "[90-100)")
@@ -274,9 +291,9 @@ age <- d_age %>%
 
 ```
 
-### Energy
+##### Energy
+
 ```{r}
-library(patchwork)
 
 # back to back histogram: energy
 level_energy <- c("[0-1000)","[1000-2000)", "[2000-3000)", "[3000-4000)", "[4000-5000)", "[5000-6000)","[6000-7000)", "[7000-8000)","[8000-9000)")
@@ -318,7 +335,8 @@ energy <- d_energy %>%
 
 ```
 
-### Carbonhydrate
+##### Carbonhydrate
+
 ```{r}
 # back to back histogram: carbonhydrate
 level_carb <- c("[0-100)","[100-200)", "[200-300)", "[300-400)", "[400-500)", "[500-600)","[600-700)", "[700-800)","[800-900)", "[900-1000)", "[1000-1100)")
@@ -362,7 +380,8 @@ carb <- d_carb %>%
 
 ```
 
-### Sugar
+##### Sugar
+
 ```{r}
 # back to back histogram: sugar
 level_sugar <- c("[0-100)","[100-200)", "[200-300)", "[300-400)", "[400-500)", "[500-600)","[600-700)", "[700-800)","[800-900)", "[900-1000)")
@@ -405,7 +424,8 @@ sugar <- d_sugar %>%
 
 ```
 
-### Fat
+##### Fat
+
 ```{r}
 # back to back histogram: fat
 level_fat <- c("[0-50)","[50-100)", "[100-150)", "[150-200)", "[200-250)", "[250-300)","[300-350)", "[350-400)")
@@ -446,7 +466,8 @@ fat <- d_fat %>%
 
 ```
 
-### Sodium
+##### Sodium
+
 ```{r}
 # back to back histogram: sodium
 level_sodium <- c("[0-2000)","[2000-4000)", "[4000-6000)", "[6000-8000)", "[8000-10000)", "[10000-12000)","[12000-14000)", "[14000-16000)","[16000-18000)", "[18000-20000)", "[20000-22000)", "[22000-24000)", "[24000-26000)")
@@ -493,6 +514,7 @@ sodium <- d_sodium %>%
 ```{r}
 print(age)
 ```
+
 According to CDC, more than 90% American diabetes patient has type two diabetes, which most often develops in people more than age 45 ([reference](https://www.cdc.gov/diabetes/basics/type2.html)). Our data accurately captured this skew in age distribution among diabetes patients: patients above age 40 takes up 95% of the whole population of positively diagnosed patients. In the contrary, the distribution of the healthy population spreads more evenly between 20 and 70, and only drastically decreased in the age group 70 or above. This distribution makes sense, since the elderly population might be less responsive to surveys compared to younger age groups.
 
 ```{r}
@@ -505,9 +527,10 @@ print(sodium)
 
 In terms of diet distribution, patients diagnosed with diabetes don't differ much from the healthy population. But there is one consistent pattern across the five graphs: diagnosed patients in general tend to consume less compared to the healthy. Given that all diabetes patients already know there diagnosis and will thus pay more attention to their daily consumption, this difference is reasonable.
 
-## Histogram
+#### Histogram
 
-### Income vs Poverty
+##### Income vs Poverty
+
 ```{r}
 mean_ip <- data %>% select(income_vs_poverty, diabetes) %>%
     mutate(diabetes = ifelse(diabetes == 1, "Diabetes", "No Diabetes")) %>%
@@ -527,10 +550,11 @@ data %>% select(income_vs_poverty, diabetes) %>%
     labs(title="Ratio of Family Income to Poverty",x="Family Income Ratio", y = "Density")+
     theme_classic()
 ```
+
 The difference between distribution of diabetes patients and that of the healthy is not big, but in general, diabetes patients tend to have less family income compared to the healthy. Considering the fact that illness might potentially decrease patients' ability of making money, the difference is consistent to the reality.
 
+##### BMI
 
-### BMI
 ```{r}
 mean_bmi <- data %>% select(BMI, diabetes) %>%
     mutate(diabetes = ifelse(diabetes == 1, "Diabetes", "No Diabetes")) %>%
@@ -553,7 +577,8 @@ data %>% select(BMI, diabetes) %>%
 
 The difference between Body Mass Index distributions of diabetes patients and the healthy is still small, but BMI distribution is more right skewed compared to that of the healthy, implying a higher BMI. This is consistent with the fact that BMI is positively correlated with risk of diabetes ([reference](https://care.diabetesjournals.org/content/30/6/1562#:~:text=Lifetime%20risk%20by%20BMI,%3E35%20kg%2Fm2.)).
 
-### HDL_Cholesterol
+##### HDL_Cholesterol
+
 ```{r}
 mean_cho <- data %>% select(HDL_Cholesterol, diabetes) %>%
     mutate(diabetes = ifelse(diabetes == 1, "Diabetes", "No Diabetes")) %>%
@@ -574,9 +599,11 @@ data %>% select(HDL_Cholesterol, diabetes) %>%
     labs(title="Direct HDL-Cholesterol",x="Direct HDL-Cholesterol (mg/dL)", y = "Density")+
     theme_classic()
 ```
+
 According to the American Heart Association, diabetes patients tend to have a higher cholesterol levels ([reference](https://www.heart.org/en/health-topics/diabetes/why-diabetes-matters/cholesterol-abnormalities--diabetes)). This fact is reflected in oure data: the Cholesterol distribution of diabetes patients in general is more right-skewed than that of the healthy.
 
-## Correlation Plot
+#### Correlation Plot
+
 ```{r}
 #correlation plot
 r <- cor(data, use="complete.obs")
@@ -585,9 +612,10 @@ ggcorrplot(r)
 
 We then constructed a heatmap to inspect the correlation between features. Not to our surprise, features from the diet category are highly correlated (which makes sense, since if people eat more or less, the amount of their carbonhydrate, sugar, sodium and fat intake will likely increase or decrease accordingly). On the other hand, the high correlation between total family income and income-poverty ratio is also understandable, given that they are likely just a multiple of each other. There are also some other explainable correlations displayed in the heatmap: the correlation between age and marital status, between highest education degree and income-poverty ratio, between daily energy intake and gender, etcetera.
 
+### Predictive Analysis
 
-# Building Data Pipeline
-## One-hot encoding
+#### Building Data Pipeline
+##### One-hot encoding
 
 We then use one-hot encoding to convert categorical features into multiple columns that eliminates the unnecessary ordinality between categeories.
 
@@ -605,13 +633,14 @@ data_onehot <- one_hot(data.table(data_onehot))
 data_onehot <- data_onehot %>% mutate(diabetes = as.factor(diabetes))
 ```
 
-## Train-test split
+##### Train-test split
 
 We then randomly split the data into training set (80%) and testing set (20%).
 
 ```{r}
 library(caret)
 library(ROSE)
+set.seed(52)
 train_index <- createDataPartition(data_onehot$diabetes, times = 1, p = 0.8, list = FALSE)
 train_set <- data_onehot[train_index, ]
 train_balanced <- ovun.sample(diabetes ~ ., data = train_set, method = "over", N = 5108)$data
@@ -638,7 +667,7 @@ table(data$gender)
 table(data$race)
 ```
 
-## PCA
+#### PCA
 ```{r}
 # Install the package if needed
 # Run full PCA to select principle components
@@ -679,86 +708,9 @@ X_train_balanced_pca = data.frame(pca_balanced_part$x)
 X_test_balanced_pca = data.frame(predict(pca_balanced_part, newdata = X_test))
 ```
 
+#### Modeling
 
-```{r}
-#Convert target to factor
-# y_train <- as.factor(y_train)
-# y_test <- as.factor(y_test)
-```
-
-
-# Modeling
-```{r}
-# Runting: Boosting, RF
-# Yuxin: SVM, KNN
-# Jessie: Logistic Regression, Linear Regression
-```
-
-## Linear Regression
-```{r}
-# LR: not balanced, no pca
-library(pROC)
-train_regression <- cbind(X_train, y_train) %>% rename(diabetes = y_train)
-glm_fit <- glm(diabetes ~ ., data = train_regression, family=binomial)
-summary(glm_fit)
-glm_predict_prob <- predict(glm_fit, X_test, type="response")
-glm_predict <- ifelse(glm_predict_prob >= 0.1, 1, 0)
-confusionMatrix(as.factor(glm_predict), as.factor(y_test), positive = "1")
-roc_curve <- roc(y_test, glm_predict_prob,
-                 smoothed = TRUE,
-                 # arguments for ci
-                 ci=TRUE, ci.alpha=0.9, stratified=FALSE,
-                 # arguments for plot
-                 plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
-                 print.auc=TRUE, show.thres=TRUE)
-sensitivity_ci <- ci.se(roc_curve)
-plot(sensitivity_ci, type="shape", col="lightblue")
-```
-
-```{r}
-# LR: not balanced, no pca, cv
-train_control <- trainControl(method = "cv", number = 10)
-glm_cv <- train(diabetes ~ .,
-               data = train_regression,
-               trControl = train_control,
-               method = "glm",
-               family=binomial())
-
-summary(glm_cv)
-glm_predict_prob <- predict(glm_cv, X_test, type="prob")
-glm_predict <- ifelse(glm_predict_prob >= 0.5, 1, 0)
-glm_predict <- ifelse(glm_predict[, 1] == 1, 0, 1)
-confusionMatrix(as.factor(glm_predict), as.factor(y_test), positive = "1")
-roc_curve <- roc(y_test, glm_predict_prob[, 1],
-                 smoothed = TRUE,
-                 # arguments for ci
-                 ci=TRUE, ci.alpha=0.9, stratified=FALSE,
-                 # arguments for plot
-                 plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
-                 print.auc=TRUE, show.thres=TRUE)
-sensitivity_ci <- ci.se(roc_curve)
-plot(sensitivity_ci, type="shape", col="lightblue")
-```
-
-```{r}
-# LR: not balanced, with PCA
-# library(pROC)
-train_regression_pca <- cbind(X_train_pca, y_train) %>% rename(diabetes = y_train)
-glm_fit_pca <- glm(diabetes ~ ., data = train_regression_pca, family=binomial)
-summary(glm_fit_pca)
-glm_predict_prob <- predict(glm_fit_pca, X_test_pca, type="response")
-glm_predict <- ifelse(glm_predict_prob >= 0.5, 1, 0)
-confusionMatrix(as.factor(glm_predict), as.factor(y_test), positive = "1")
-roc_curve <- roc(y_test, glm_predict_prob,
-                 smoothed = TRUE,
-                 # arguments for ci
-                 ci=TRUE, ci.alpha=0.9, stratified=FALSE,
-                 # arguments for plot
-                 plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
-                 print.auc=TRUE, show.thres=TRUE)
-sensitivity_ci <- ci.se(roc_curve)
-plot(sensitivity_ci, type="shape", col="lightblue")
-```
+##### Logistic Regression
 
 ```{r}
 # LR: balanced, not PCA
@@ -797,41 +749,22 @@ plot(sensitivity_ci, type="shape", col="lightblue")
 ```
 
 
-```{r}
-# LR: balanced, with PCA
-# library(pROC)
-train_regression_balanced_pca <- cbind(X_train_balanced_pca, y_train_balanced) %>% rename(diabetes = y_train_balanced)
-glm_fit_balanced_pca <- glm(diabetes ~ ., data = train_regression_balanced_pca, family=binomial)
-summary(glm_fit_balanced_pca)
-glm_predict_prob <- predict(glm_fit_balanced_pca, X_test_balanced_pca, type="response")
-glm_predict <- ifelse(glm_predict_prob >= 0.37, 1, 0)
-confusionMatrix(as.factor(glm_predict), as.factor(y_test), positive = "1")
-roc_curve <- roc(y_test, glm_predict_prob,
-                 smoothed = TRUE,
-                 # arguments for ci
-                 ci=TRUE, ci.alpha=0.9, stratified=FALSE,
-                 # arguments for plot
-                 plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
-                 print.auc=TRUE, show.thres=TRUE)
-sensitivity_ci <- ci.se(roc_curve)
-plot(sensitivity_ci, type="shape", col="lightblue")
-```
-
-#RF
+##### Random Forest
 
 ```{r}
 library(randomForest)
 library(ROSE)
-
 ```
 
 ```{r}
-#best rf for No PCA, balanced GOOD
+#RF for no PCA, balanced
+set.seed(9)
+
 rf_classifier = randomForest(x = X_train_balanced, y = y_train_balanced, xtest = X_test, ytest=y_test, ntree=100, mtry=5, importance=TRUE, keep.forest=TRUE, trControl = tr, nodesize = 5, maxnodes = 15) #maxnodes is the most important
 #rf_classifier
 pre_prob = predict(rf_classifier, X_test, type = "prob")[,1]
-pre = ifelse(pre_prob >= 0.58, 0, 1)
-confusionMatrix(as.factor(pre), as.factor(y_test), positive = "1")
+pre = ifelse(pre_prob >= 0.56, 0, 1)
+confusionMatrix(as.factor(pre), as.factor(y_test), positive="1")
 plot_roc(pre_prob)
 ```
 We trained Random Forest models on four training sets, with/without PCA and balanced/not balanced, respectively. After carefully tuning parameters and plotting ROC curves, we found that random forest models are very sensitive to imbalanced data. In our original training set, there are 1549 negative(0) observations, but only 500 positive(1) observations. Therefore, there is a significant probability that a bootstrap sample contains few or even none of the minority class, resulting in a tree with poor performance for predicting the minority class.(https://statistics.berkeley.edu/tech-reports/666) Indeed, two of our models, trained by original imbalanced data, can hardly discriminate between 0 and 1. Instead, they classify almost everyone into the negative class.
@@ -840,15 +773,16 @@ Furthermore, in the two models trained by balanced data, we found that the model
 
 Finally, from all Random Forest models, we chose the model trained by balanced data without PCA. The area under the ROC curve (AUC) is 0.83, suggesting that it is a fairly good classification model. As high sensitivity is our first goal, we set a threshold such that sensitivity is high enough while specificity is acceptable.  
 
-
-# Boosting
+##### Boosting
 ```{r}
 library(gbm)
-#no pca not balanced GOOD
+#no pca not balanced
+set.seed(9)
+
 data_nn = X_train
 class(y_train)
 data_nn$y = y_train
-
+set.seed(7)
 boost=gbm(y ~.,
               data = data_nn,
               distribution = "multinomial",
@@ -857,19 +791,22 @@ boost=gbm(y ~.,
               n.minobsinnode = 20,
               n.trees = 150) #reduce n.trees to increase sensitivity
 pre <- predict(boost, newdata = X_test, type = "response", n.trees = 200)[,,1][,1]
-y_pred <- ifelse(as.numeric(pre)>0.91,0,1)
+y_pred <- ifelse(as.numeric(pre)>0.89,0,1)
 confusionMatrix(as.factor(y_pred), as.factor(y_test), positive = "1")
 plot_roc(as.numeric(pre))
 ```
+
 Gradient boosting models tell a different story. Similarly, as training Random Forest model, we tried on four training datasets with/without PCA and balanced/non-balanced.
+
 However, in this case, PCA had a strong negative impact on model performance. On the other hand, the boosting model is very robust to handle imbalanced data: both models training by balanced/imbalanced data give similar result, with AUC around 0.83. To keep the model training process simple, we chose the one trained by original imbalanced data.
 
-##SVM
+##### SVM
 
 ```{r}
 library(e1071)
 # SVM not PCA, balanced: sensitivity 0.83, specificity 0.66, roc 0.81 Good
-
+library('e1071')
+set.seed(99)
 svm <- svm(x = X_train_balanced, y = y_train_balanced, scale = TRUE, kernel = 'linear', cross = 10, probability = TRUE)
 
 pre_svm <- predict(svm, X_test, probability = TRUE)
@@ -879,9 +816,10 @@ pre_svm <- attr(pre_svm,"prob")[,2]
 plot_roc(as.numeric(pre_svm))
 # print(pre_svm)
 
-pre_svm <- ifelse(pre_svm > 0.35, 1, 0)
+pre_svm <- ifelse(pre_svm > 0.36, 1, 0)
 confusionMatrix(as.factor(pre_svm), y_test, positive = "1")
 ```
+
 SVM stands for support vector machine. This binary classification algorithm aims to create a hyperplane in the hyperspace of data with features being the dimensions, that split the two classes to different sides as much as possible. In our training, we used linear kernal, did 10-fold cross validation, and trained using dataset with principal component analysis and oversampling, dataset without principal component analysis and with oversampling, dataset with principal component analysis and without oversampling, and dataset without principal component analysis or oversampling. We also normalized each feature before training so that they all have zero mean and unit variance.
 
 Turns out that the best model trained using SVM algorithm is the one trained with dataset oversampled and without principal component analysis.
@@ -891,30 +829,27 @@ It's not hard to see why SVM performs better in a balanced dataset using oversam
 We suspect the reason that SVM performs better with principal component analysis is that PCA filtered out some spatial information in the 28 features we picked that could be important to the training of SVM.  
 
 
-## KNN
+##### KNN
+
 ```{r}
 library(class)
 
 # KNN pca, balanced: sensitivity 0.73, specificity 0.61, roc 0.67  Normal-Good
-
+set.seed(4)
 pre_knn <- knn(X_train_balanced_pca, X_test_balanced_pca , cl = y_train_balanced, k = 18, l = 0, prob = TRUE, use.all = TRUE)
 
 pre_knn <- ifelse(pre_knn == 1, attr(pre_knn, "prob"), 1 - attr(pre_knn, "prob"))
 plot_roc(as.numeric(pre_knn))
 
-pre_knn <- ifelse(pre_knn > 0.25, 1, 0)
+pre_knn <- ifelse(pre_knn > 0.28, 1, 0)
 confusionMatrix(as.factor(pre_knn), y_test, positive = "1")
 
 ```
 
 KNN stands for k-nearest neighbor. It assumes that similar objects belongs to the the same class. For each data point in the test set, it finds the nearest k neighbors with classes, look at their classes and assign the class with most vote to the data point. For KNN, we set k to 18, and trained using dataset with principal component analysis and oversampling, dataset without principal component analysis and with oversampling, dataset with principal component analysis and without oversampling, and dataset without principal component analysis or oversampling.
 
-For KNN, the best model is the one trained with dataset oversampled and with principal component analysis. 
+For KNN, the best model is the one trained with dataset oversampled and with principal component analysis.
 
 It's also not a surprise that KNN performs better in a balanced dataset. KNN is, in its essence, a communty-level voting system that considers a majority of vote as a win. So no wonder the dominant class will use its dominance in number to affect the voting result, even when in some cases, data points have some neighbors from the non-dominant class and actually belong to that class themselves. A balanced dataset can avoid much of this negative effect.
 
 KNN requires a dense distribution of data points in the hyperspace of data, and is thus very vulnerable to the curse of dimensionality. With principal component analysis decreasing th dimensions, for KNN, it is imaginable that this help outweighs the loss of information caused by principal component analysis.
-
-
-## Oversampling vs PCA
-## Shiny app
