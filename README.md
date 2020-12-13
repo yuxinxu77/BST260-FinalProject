@@ -37,9 +37,17 @@ In order to train our model, we perform one-hot encoding, oversampling and use p
 We then train our model using five different algorithms: logistic regression, random forest, gradient boosting, support vector machine and k nearest neighbor. For each algorithm, we train with four different training datasets: a dataset without oversampling or PCA, a dataset with oversampling but without PCA, a dataset with PCA but without oversampling, and a dataset with both oversampling and PCA. 
 
 #### Logistic Regression: the best one is balanced but without PCA
-Confusion Matrix            |  ROC Curve
-:-------------------------:|:-------------------------:
-![](./image/glm_cm.png)  |  ![](./image/glm_roc.png)
+
+<table>
+  <tr>
+    <td>Confusion Matrix</td>
+     <td>ROC Curve</td>
+  </tr>
+  <tr>
+    <td><img src="./image/glm_cm.png" width=400 height=480></td>
+    <td><img src="./image/glm_roc.png" width=400 height=480></td>
+  </tr>
+ </table>
 
 ## Conclusion
 Based on the descriptive analysis and the predictive analysis we did previously, we were able to view and make prediction on whether a people with giving data is currently under high risks of developing diabetes. We conclude that diabetes patients above age 20 tend to be male, tends to be not as wealthy, tend to follow a healthier diet because of the disease, and tend to have higher BMI. The results of our project can be utilized to improve the health quality of the population. If the diabetes condition of a person id predicted to be positive, it does not indicate that the person is definitely developing diabetes. Since our models we optimized by the criteria of sensitivity, we are able to capture most of the of the people who is having diabetes, but our false positive rate is also relatively high.
