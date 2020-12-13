@@ -15,8 +15,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 #### Overview and Motivation
 
-Diabetes is a group of metabolic disorders characterized by a high blood sugar level over a prolonged period of time. Diabetes prevalence has been rising more rapidly among adults over 18 years of age from 4.7% in 1980 to 8.5% in 2014. On the one hand, the onset of type 2 diabetes is highly associated with an unhealthy lifestyle. On the other hand, diabetes is a major cause of various diseases and was the seventh leading cause of death in 2016. (data from WHO)
-Given this situation, our motivation for this project is: first, to find and analyze possible risk factors of diabetes, such as diet, smoking, health condition, and demographic and socioeconomic factors. Based on our results, we could encourage people to follow healthier lifestyles and therefore to delay or avoid the onset of type 2 diabetes. Secondly, we would like to study the potential health-related influences of diabetes according to their lab test results and questionnaire answers. Finally, we would like to forecast whether an individual would develop Diabetes given the current living condition. We hope that these findings can lead to a better understanding of diabetes and help physicians and patients to prevent, treat, control, and manage diabetes.  
+Diabetes is a group of metabolic disorders characterized by a high blood sugar level over a prolonged period of time. Diabetes prevalence has been rising more rapidly among adults over 18 years of age from 4.7% in 1980 to 8.5% in 2014. On the one hand, the onset of type 2 diabetes is highly associated with an unhealthy lifestyle. On the other hand, diabetes is a major cause of various diseases and was the seventh leading cause of death in 2016 (data from WHO).
+Given this situation, our motivation for this project is: first, to find and analyze possible risk factors of diabetes, such as diet, smoking, health condition, and demographic and socioeconomic factors. Based on our results, we could encourage people to follow healthier lifestyles and therefore to delay or avoid the onset of type 2 diabetes. Secondly, we would like to study the potential health-related influences of diabetes according to their lab test results and questionnaire answers. Finally, we would like to forecast the risk of an individual developing diabetes given the current living condition. We hope that these findings can lead to a better understanding of diabetes and help patients to prevent diabetes.  
 
 #### Related Work
 After we decided to do a project revolving around diabetes, we looked through some papers related to the topic, and found [one](https://bmcendocrdisord.biomedcentral.com/articles/10.1186/s12902-019-0436-6) constructing predictive models for diabetes diagnosis. It occurred to us that we want to try out something similar.
@@ -26,18 +26,18 @@ We are interested in the following question:
 
 * Do diabetes patients above age 20 tend to follow a specific demographic pattern?
 * Do diabetes patients above age 20 tend to follow a specific socioeconomic pattern?
-* Do diabetes patients above age 20 tend to follow a specific diet pattern(logically, they should, but do * they really follow)?
+* Do diabetes patients above age 20 tend to follow a specific diet pattern?
 * Given certain information on demographics, socioeconomic status and diet pattern, how likely can we correctly predict whether patients above age 20 have been diagnosed with diabetes or not?
 
 ### Data Source and Data Preprocessing
 
-We looked for relevant data on diabetes and found the dataset [`National Health and Nutrition Examination Survey`](https://www.cdc.gov/nchs/nhanes/about_nhanes.htm) collection by CDC from 2017 to 2018. It contains more than ten thousand interviewees' data that cover a variety of topics: demographics, examination, health status, diet, lab results, etcetera. We used a specific subset of the data that contains 8897 interviewees who participated in the diabetes survey. After some preprocessing and dropping NA rows and certain age groups, our explorative analysis and model training eventually ends up with a dataset of 3811 individuals.
+We looked for relevant data on diabetes and found the dataset [National Health and Nutrition Examination Survey](https://www.cdc.gov/nchs/nhanes/about_nhanes.htm) collection by CDC from 2017 to 2018. It contains more than ten thousand interviewees' data that cover a variety of topics: demographics, examination, health status, diet, lab results, etcetera. We used a specific subset of the data that contains 8897 interviewees who participated in the diabetes survey. After some preprocessing and dropping NA rows and certain age groups, our explorative analysis and model training eventually ends up with a dataset of 3811 individuals.
 
 ```{r}
-library(SASxport)
-library(dplyr)
-library(tidyverse)
-library(ggcorrplot)
+invisible(library(SASxport))
+invisible(library(dplyr))
+invisible(library(tidyverse))
+invisible(library(ggcorrplot))
 ```
 Our dataset contains a target variable in the form of a single-choice questionnaire answer, and features from four categories: diet, demographics, examination and lab.
 
@@ -80,15 +80,17 @@ dat <- dat %>% select(SEQN, energy, carbonhydrate, total_sugar, total_fat, sodiu
 
 # now dat only has 7495 rows, less than the original 8704 rows by 1209 rows
 # that's exactly the expected number of empty rows
-
-dat <- inner_join(dat,dat_t, by = 'SEQN')
-dat <- dat %>% filter(diabetes == 1 | diabetes == 2)
 ```
 
 Since in diet data, all wanted features may have both data from day 1 and day 2, we replace the values with the mean from the two days if both exists, and keep the value where on data from one of the day exists.
 
 
 #### Target data
+
+```{r}
+dat <- inner_join(dat,dat_t, by = 'SEQN')
+dat <- dat %>% filter(diabetes == 1 | diabetes == 2)
+```
 
 For target data, we filtered the dataset to make sure that the target variable ("If doctors told the participant in the patients in the past that they have diabetes") only contains factors that represent yes and no.
 
@@ -108,7 +110,7 @@ demo_clean <- demo_clean %>% mutate(marital_status =
 demo_clean <- demo_clean %>% filter(is.na(total_family_income) != TRUE
                                     & is.na(income_vs_poverty) != TRUE
                                     & is.na(highest_edu) != TRUE)
-summary(demo_clean)
+
 # Join demographics data with other data and drop any rows with NULL values
 # 5690 observation left
 data <- left_join(demo_clean, dat, by = "SEQN") %>% drop_na()
@@ -151,7 +153,7 @@ data$diabetes[data$diabetes==2]<-0
 data <- data %>% filter(highest_edu != 7 & highest_edu != 9 & marital_status != 0)
 ```
 
-To simplify our classification problem, we decided to delete rows where the value of feature "highest education" only rarely appear in our dataset.
+To simplify our classification problem, we decided to delete rows where the value of feature "highest education" and feature "marital status" only rarely appear in our dataset.
 
 ### Data Visualization
 
@@ -243,6 +245,7 @@ The distributions of races in these two groups are very similar, except that the
 pie_chart(0, "total_family_income", level_income)
 pie_chart(1, "total_family_income", level_income)
 ```
+
 Lastly, looking at total family income, we might find that the fraction of people with the highest income ($100,000 and over, $75,000 to $99,999, and $65,000 to $74,999) in the non-diabetes group is greater than the diabetes group.
 
 
@@ -524,7 +527,7 @@ print(fat)
 print(sodium)
 ```
 
-In terms of diet distribution, patients diagnosed with diabetes don't differ much from the healthy population. But there is one consistent pattern across the five graphs: diagnosed patients in general tend to consume less compared to the healthy. Given that all diabetes patients already know there diagnosis and will thus pay more attention to their daily consumption, this difference is reasonable.
+In terms of diet distribution, patients diagnosed with diabetes don't differ much from the healthy population. But there is one consistent pattern across the five graphs: diagnosed patients in general tend to consume less compared to the healthy. This differ from our expectation, since we expect to see the diabetes patients having a less-as-healthy diet. However, given that all diabetes patients already know there diagnosis and will thus pay more attention to their daily consumption, this difference is reasonable.
 
 #### Histogram
 
@@ -619,8 +622,8 @@ We then constructed a heatmap to inspect the correlation between features. Not t
 We then use one-hot encoding to convert categorical features into multiple columns that eliminates the unnecessary ordinality between categeories.
 
 ```{r}
-library(mltools)
-library(data.table)
+invisible(library(mltools))
+invisible(library(data.table))
 
 data_onehot <- data %>% select(-c("SEQN")) %>%
     mutate(total_family_income = ifelse(total_family_income == 14 | total_family_income == 15,
@@ -634,11 +637,11 @@ data_onehot <- data_onehot %>% mutate(diabetes = as.factor(diabetes))
 
 ##### Train-test split
 
-We then randomly split the data into training set (80%) and testing set (20%).
+We then randomly split the data into training set (80%) and testing set (20%), and created a balanced training set by random over-sampling minority examples.
 
 ```{r}
-library(caret)
-library(ROSE)
+invisible(library(caret))
+invisible(library(ROSE))
 set.seed(52)
 train_index <- createDataPartition(data_onehot$diabetes, times = 1, p = 0.8, list = FALSE)
 train_set <- data_onehot[train_index, ]
@@ -659,22 +662,15 @@ X_test <- test_set %>% select(-c(diabetes))
 y_test <- test_set$diabetes
 ```
 
-```{r}
-table(data$highest_edu)
-table(data$marital_status)
-table(data$gender)
-table(data$race)
-```
 
 #### PCA
 ```{r}
 # Install the package if needed
 # Run full PCA to select principle components
 # install.packages("factoextra")
-library(factoextra)
-library("corrplot")
+invisible(library(factoextra))
+invisible(library("corrplot"))
 pca_full <- prcomp(X_train, scale = TRUE)
-summary(pca_full)
 fviz_eig(pca_full)
 fviz_pca_var(pca_full,
              col.var = "contrib", # Color by contributions to the PC
@@ -689,7 +685,7 @@ corrplot(get_pca(pca_full)$cos2, is.corr=FALSE)
 ```{r}
 # Run pca on selected number of principle components
 pca_part <- prcomp(X_train, scale = TRUE, rank. = 10)
-summary(pca_part)
+
 # Apply pca transform on both training set and test set
 # Unbalanced training data
 X_train_pca = data.frame(pca_part$x)
@@ -700,38 +696,18 @@ X_test_pca = data.frame(predict(pca_part, newdata = X_test))
 ```{r}
 # Run pca on selected number of priciple components
 pca_balanced_part <- prcomp(X_train_balanced, scale = TRUE, rank. = 10)
-summary(pca_balanced_part)
+
 # Apply pca transform on both training set and test set
 # Unbalanced training data
 X_train_balanced_pca = data.frame(pca_balanced_part$x)
 X_test_balanced_pca = data.frame(predict(pca_balanced_part, newdata = X_test))
 ```
 
+We apply PCA analysis on data after one-hot coding because we noticed many feature columns contain a lot of zero and PCA analysis can extract useful features and result in a smaller dataset. We also want to see how computer construct features from the cleaned dataset. We first apply full PCA analysis on the dataset to visualized the contribution of each features to the principle components. We noticed that the most significant principle component is constructed main by diet related features, which include energy, total fat intake etc. The second significant principle component is constructed main by demographics related features, which include energy, total fat intake etc. We then picked the first 10 principle components and apply the resulting transformation to the training and testing data for constructing machine learning models.
+
 #### Modeling
 
-##### Logistic Regression
-
-```{r}
-# LR: balanced, not PCA
-library(pROC)
-train_regression_balanced <- cbind(X_train_balanced, y_train_balanced) %>% rename(diabetes = y_train_balanced)
-glm_fit_balanced <- glm(diabetes ~ ., data = train_regression_balanced, family=binomial)
-summary(glm_fit_balanced)
-glm_predict_prob <- predict(glm_fit_balanced, X_test, type="response")
-glm_predict <- ifelse(glm_predict_prob >= 0.37, 1, 0)
-confusionMatrix(as.factor(glm_predict), as.factor(y_test), positive = "1")
-roc_curve <- roc(y_test, glm_predict_prob,
-                 smoothed = TRUE,
-                 # arguments for ci
-                 ci=TRUE, ci.alpha=0.9, stratified=FALSE,
-                 # arguments for plot
-                 plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
-                 print.auc=TRUE, show.thres=TRUE)
-sensitivity_ci <- ci.se(roc_curve)
-plot(sensitivity_ci, type="shape", col="lightblue")
-
-```
-
+##### Define a Function to plot roc
 ```{r}
 #function to plot roc curve
 plot_roc <- function(pre){
@@ -747,12 +723,37 @@ plot(sensitivity_ci, type="shape", col="lightblue")
 }
 ```
 
+##### Logistic Regression
+
+```{r}
+# LR: balanced, not PCA
+invisible(library(pROC))
+
+train_regression_balanced <- cbind(X_train_balanced, y_train_balanced) %>% rename(diabetes = y_train_balanced)
+
+glm_fit_balanced <- glm(diabetes ~ ., data = train_regression_balanced, family=binomial)
+
+summary(glm_fit_balanced)
+
+glm_predict_prob <- predict(glm_fit_balanced, X_test, type="response")
+glm_predict <- ifelse(glm_predict_prob >= 0.37, 1, 0)
+
+confusionMatrix(as.factor(glm_predict), as.factor(y_test), positive = "1")
+
+invisible(plot_roc(glm_predict_prob))
+
+```
+
+Logistic Regression is a linear classifier that can be used for prediction. We applied logistics regression on four training datasets with/without PCA and balanced/non-balanced.
+
+Logistic regression achieved its best performance when we were using balanced data without PCA transformation. Imbalanced data caused the model to obtain very low sensitivity rate and the model fitted with imbalanced data can not correctly identify most of the diabetes patients. PCA transformation did not make significance differences in the model performances but model with PCA transformation tends to lower the specificity comparing with model without PCA transformation.
+
 
 ##### Random Forest
 
 ```{r}
-library(randomForest)
-library(ROSE)
+invisible(library(randomForest))
+invisible(library(ROSE))
 ```
 
 ```{r}
@@ -766,6 +767,7 @@ pre = ifelse(pre_prob >= 0.56, 0, 1)
 confusionMatrix(as.factor(pre), as.factor(y_test), positive="1")
 plot_roc(pre_prob)
 ```
+
 We trained Random Forest models on four training sets, with/without PCA and balanced/not balanced, respectively. After carefully tuning parameters and plotting ROC curves, we found that random forest models are very sensitive to imbalanced data. In our original training set, there are 1549 negative(0) observations, but only 500 positive(1) observations. Therefore, there is a significant probability that a bootstrap sample contains few or even none of the minority class, resulting in a tree with poor performance for predicting the minority class.(https://statistics.berkeley.edu/tech-reports/666) Indeed, two of our models, trained by original imbalanced data, can hardly discriminate between 0 and 1. Instead, they classify almost everyone into the negative class.
 
 Furthermore, in the two models trained by balanced data, we found that the model without PCA gives a better result, possibly because some information was lost in the process of performing PCA.
@@ -774,14 +776,15 @@ Finally, from all Random Forest models, we chose the model trained by balanced d
 
 ##### Boosting
 ```{r}
-library(gbm)
+invisible(library(gbm))
 #no pca not balanced
 set.seed(9)
 
 data_nn = X_train
-class(y_train)
 data_nn$y = y_train
+
 set.seed(7)
+
 boost=gbm(y ~.,
               data = data_nn,
               distribution = "multinomial",
@@ -812,7 +815,7 @@ pre_svm <- predict(svm, X_test, probability = TRUE)
 # print(pre_svm)
 
 pre_svm <- attr(pre_svm,"prob")[,2]
-plot_roc(as.numeric(pre_svm))
+invisible(plot_roc(as.numeric(pre_svm)))
 # print(pre_svm)
 
 pre_svm <- ifelse(pre_svm > 0.36, 1, 0)
@@ -831,7 +834,7 @@ We suspect the reason that SVM performs better with principal component analysis
 ##### KNN
 
 ```{r}
-library(class)
+invisible(library(class))
 
 # KNN pca, balanced: sensitivity 0.73, specificity 0.61, roc 0.67  Normal-Good
 set.seed(4)
@@ -852,3 +855,9 @@ For KNN, the best model is the one trained with dataset oversampled and with pri
 It's also not a surprise that KNN performs better in a balanced dataset. KNN is, in its essence, a communty-level voting system that considers a majority of vote as a win. So no wonder the dominant class will use its dominance in number to affect the voting result, even when in some cases, data points have some neighbors from the non-dominant class and actually belong to that class themselves. A balanced dataset can avoid much of this negative effect.
 
 KNN requires a dense distribution of data points in the hyperspace of data, and is thus very vulnerable to the curse of dimensionality. With principal component analysis decreasing th dimensions, for KNN, it is imaginable that this help outweighs the loss of information caused by principal component analysis.
+
+### Conclusion
+
+Based on the descriptive analysis and the predictive analysis we did previously, we were able to view and make prediction on whether a people with giving data is currently under high risks of developing diabetes. We conclude that diabetes patients above age 20 tend to be male, tends to be not as wealthy, tend to follow a healthier diet because of the disease, and tend to have higher BMI. The results of our project can be utilized to improve the health quality of the population. If the diabetes condition of a person id predicted to be positive, it does not indicate that the person is definitely developing diabetes. Since our models we optimized by the criteria of sensitivity, we are able to capture most of the of the people who is having diabetes, but our false positive rate is also relatively high.
+
+Thus, people whoever get positive results from our model is suggested to conduct a diabetes test from medical center. Moreover, positive results also indicate that under current diet patterns and other conditions, one might be under a great risk of developing diabetes even this disease is not detected now.
