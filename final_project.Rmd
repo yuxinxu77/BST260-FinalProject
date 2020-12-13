@@ -10,15 +10,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 ## BST260 FINAL PROJECT {.tabset .tabset-fade}
 
-
 ### Data Preprocessing
 ```{r}
 library(SASxport)
 library(dplyr)
 library(tidyverse)
 library(ggcorrplot)
-# data_dir <- "./data"
-# setwd(data_dir)
 ```
 
 ## Diet Data Preprocessing
