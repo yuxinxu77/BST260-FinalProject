@@ -1,5 +1,6 @@
 ---
-title: "BST260 Final Project --- Predicting Risk of Diabetes"
+title: "BST260 Final Project"
+subtitle: "Predicting Risk of Diabetes"
 author: "Junyi Guo, Runting Yang, Yuxin Xu"
 date: "12/13/2020"
 output: html_document
@@ -22,6 +23,7 @@ After we decided to do a project revolving around diabetes, we looked through so
 
 #### Initial Question
 We are interested in the following question:
+
 * Do diabetes patients above age 20 tend to follow a specific demographic pattern?
 * Do diabetes patients above age 20 tend to follow a specific socioeconomic pattern?
 * Do diabetes patients above age 20 tend to follow a specific diet pattern(logically, they should, but do * they really follow)?
@@ -638,6 +640,7 @@ We then randomly split the data into training set (80%) and testing set (20%).
 ```{r}
 library(caret)
 library(ROSE)
+set.seed(52)
 train_index <- createDataPartition(data_onehot$diabetes, times = 1, p = 0.8, list = FALSE)
 train_set <- data_onehot[train_index, ]
 train_balanced <- ovun.sample(diabetes ~ ., data = train_set, method = "over", N = 5108)$data
@@ -746,26 +749,6 @@ plot(sensitivity_ci, type="shape", col="lightblue")
 ```
 
 
-```{r}
-# LR: balanced, with PCA
-# library(pROC)
-train_regression_balanced_pca <- cbind(X_train_balanced_pca, y_train_balanced) %>% rename(diabetes = y_train_balanced)
-glm_fit_balanced_pca <- glm(diabetes ~ ., data = train_regression_balanced_pca, family=binomial)
-summary(glm_fit_balanced_pca)
-glm_predict_prob <- predict(glm_fit_balanced_pca, X_test_balanced_pca, type="response")
-glm_predict <- ifelse(glm_predict_prob >= 0.37, 1, 0)
-confusionMatrix(as.factor(glm_predict), as.factor(y_test), positive = "1")
-roc_curve <- roc(y_test, glm_predict_prob,
-                 smoothed = TRUE,
-                 # arguments for ci
-                 ci=TRUE, ci.alpha=0.9, stratified=FALSE,
-                 # arguments for plot
-                 plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
-                 print.auc=TRUE, show.thres=TRUE)
-sensitivity_ci <- ci.se(roc_curve)
-plot(sensitivity_ci, type="shape", col="lightblue")
-```
-
 ##### Random Forest
 
 ```{r}
@@ -779,7 +762,7 @@ rf_classifier = randomForest(x = X_train_balanced, y = y_train_balanced, xtest =
 #rf_classifier
 pre_prob = predict(rf_classifier, X_test, type = "prob")[,1]
 pre = ifelse(pre_prob >= 0.52, 0, 1)
-confusionMatrix(as.factor(pre), as.factor(y_test))
+confusionMatrix(as.factor(pre), as.factor(y_test), positive="1")
 plot_roc(pre_prob)
 ```
 We trained Random Forest models on four training sets, with/without PCA and balanced/not balanced, respectively. After carefully tuning parameters and plotting ROC curves, we found that random forest models are very sensitive to imbalanced data. In our original training set, there are 1549 negative(0) observations, but only 500 positive(1) observations. Therefore, there is a significant probability that a bootstrap sample contains few or even none of the minority class, resulting in a tree with poor performance for predicting the minority class.(https://statistics.berkeley.edu/tech-reports/666) Indeed, two of our models, trained by original imbalanced data, can hardly discriminate between 0 and 1. Instead, they classify almost everyone into the negative class.
@@ -795,7 +778,7 @@ library(gbm)
 data_nn = X_train
 class(y_train)
 data_nn$y = y_train
-
+set.seed(7)
 boost=gbm(y ~.,
               data = data_nn,
               distribution = "multinomial",
@@ -805,7 +788,7 @@ boost=gbm(y ~.,
               n.trees = 150) #reduce n.trees to increase sensitivity
 pre <- predict(boost, newdata = X_test, type = "response", n.trees = 200)[,,1][,1]
 y_pred <- ifelse(as.numeric(pre)>0.87,0,1)
-confusionMatrix(as.factor(y_pred), as.factor(y_test))
+confusionMatrix(as.factor(y_pred), as.factor(y_test),positive="1")
 plot_roc(as.numeric(pre))
 ```
 
@@ -818,6 +801,7 @@ However, in this case, PCA had a strong negative impact on model performance. On
 ```{r}
 # SVM not PCA, balanced: sensitivity 0.83, specificity 0.66, roc 0.81 Good
 library('e1071')
+set.seed(99)
 svm <- svm(x = X_train_balanced, y = y_train_balanced, scale = TRUE, kernel = 'linear', cross = 10, probability = TRUE)
 
 pre_svm <- predict(svm, X_test, probability = TRUE)
@@ -846,7 +830,7 @@ We suspect the reason that SVM performs better with principal component analysis
 library(class)
 
 # KNN pca, balanced: sensitivity 0.73, specificity 0.61, roc 0.67  Normal-Good
-
+set.seed(4)
 pre_knn <- knn(X_train_balanced_pca, X_test_balanced_pca , cl = y_train_balanced, k = 18, l = 0, prob = TRUE, use.all = TRUE)
 
 pre_knn <- ifelse(pre_knn == 1, attr(pre_knn, "prob"), 1 - attr(pre_knn, "prob"))
