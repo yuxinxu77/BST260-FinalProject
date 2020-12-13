@@ -32,9 +32,15 @@ We performed some explorative analysis over the features we selected to examine 
 
 ### Data Pipeline
 ### Machine Learning Models
+In order to train our model, we performed one-hot encoding, oversampling and used principle component analysis to help decrease the number of features.
+
+We then trained our model using five different algorithms: logistic regression, random forest, gradient boosting, support vector machine and k nearest neighbor.
 
 ## Conclusion
+Based on the descriptive analysis and the predictive analysis we did previously, we were able to view and make prediction on whether a people with giving data is currently under high risks of developing diabetes. We conclude that diabetes patients above age 20 tend to be male, tends to be not as wealthy, tend to follow a healthier diet because of the disease, and tend to have higher BMI. The results of our project can be utilized to improve the health quality of the population. If the diabetes condition of a person id predicted to be positive, it does not indicate that the person is definitely developing diabetes. Since our models we optimized by the criteria of sensitivity, we are able to capture most of the of the people who is having diabetes, but our false positive rate is also relatively high.
 
-## Reference
+Thus, people whoever get positive results from our model is suggested to conduct a diabetes test from medical center. Moreover, positive results also indicate that under current diet patterns and other conditions, one might be under a great risk of developing diabetes even this disease is not detected now.
 
 ## Links to Documents
+[RMD file](https://github.com/yuxinxu77/BST260-FinalProject/blob/main/final_project.Rmd)
+[HTML file](https://github.com/yuxinxu77/BST260-FinalProject/blob/main/final_project.html)
