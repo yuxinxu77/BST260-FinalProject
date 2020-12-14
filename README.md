@@ -146,4 +146,4 @@ Thus, people whoever get positive results from our model is suggested to conduct
 
 [Shiny App](https://github.com/yuxinxu77/BST260-FinalProject/blob/main/BST260_final_project/app.R)
 
-
+[Screencast](https://youtu.be/xEEvBeY4Rbw)
