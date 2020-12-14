@@ -185,7 +185,7 @@ mean_cho <- data %>% select(HDL_Cholesterol, diabetes) %>%
 # Define UI for application that draws a histogram
 ui <- fluidPage(
     theme = shinytheme("flatly"), 
-    navbarPage("Predictive Risk of Diebetes",
+    navbarPage("Predictive Risk of Diabetes",
                tabPanel("Home",
                         fluidRow(
                           img(src='front.jpeg', height = 350, style="display: block; margin-left: auto; margin-right: auto;"),
@@ -364,7 +364,7 @@ server <- function(input, output) {
   output$text_background <- renderText({
     paste("<p>",
           "Diabetes is a group of metabolic disorders characterized by a high 
-          \blood sugar level over a prolonged period of time. Diabetes prevalence 
+          blood sugar level over a prolonged period of time. Diabetes prevalence 
           has been rising more rapidly among adults over 18 years of age from 
           4.7% in 1980 to 8.5% in 2014. On the one hand, the onset of type 2 
           diabetes is highly associated with an unhealthy lifestyle. On the other 
@@ -882,7 +882,7 @@ server <- function(input, output) {
   
   output$text_con <- renderText({
     paste("<p>",
-          "Based on the descriptive analysis and the predictive analysis we did previously, we were able to view and make prediction on whether a people with giving data is currently under high risks of developing diabetes. We conclude that diabetes patients above age 20 tend to be male, tends to be not as wealthy, tend to follow a healthier diet because of the disease, and tend to have higher BMI. The results of our project can be utilized to improve the health quality of the population. If the diabetes condition of a person id predicted to be positive, it does not indicate that the person is definitely developing diabetes. Since our models we optimized by the criteria of sensitivity, we are able to capture most of the of the people who is having diabetes, but our false positive rate is also relatively high.",
+          "Based on the descriptive analysis and the predictive analysis we did previously, we were able to view and make prediction on whether a people with giving data is currently under high risks of developing diabetes. We conclude that diabetes patients above age 20 tend to be male, tends to be not as wealthy, tend to follow a healthier diet because of the disease, and tend to have higher BMI. The results of our project can be utilized to improve the health quality of the population. If the diabetes condition of a person is predicted to be positive, it does not indicate that the person is definitely developing diabetes. Since our models we optimized by the criteria of sensitivity, we are able to capture most of the of the people who is having diabetes, but our false positive rate is also relatively high.",
           "</p>", 
           "<br>", 
           "<p>", 
