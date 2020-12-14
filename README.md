@@ -72,9 +72,9 @@ We trained Random Forest models on four training sets, with/without PCA and bala
 Furthermore, in the two models trained by balanced data, we found that the model without PCA gives a better result, possibly because some information was lost in the process of performing PCA.
 
 Finally, from all Random Forest models, we chose the model trained by balanced data without PCA. The area under the ROC curve (AUC) is 0.83, suggesting that it is a fairly good classification model. As high sensitivity is our first goal, we set a threshold such that sensitivity is high enough while specificity is acceptable.
+
  
- 
- #### Boosting: the best one is not balanced and trained without PCA
+#### Boosting: the best one is not balanced and trained without PCA
  
  <table>
   <tr>
@@ -91,7 +91,7 @@ Gradient boosting models tell a different story. Similarly, as training Random F
 
 However, in this case, PCA had a strong negative impact on model performance. On the other hand, the boosting model is very robust to handle imbalanced data: both models training by balanced/imbalanced data give similar result, with AUC around 0.83. To keep the model training process simple, we chose the one trained by original imbalanced data.
 
- #### Support Vector Machine: the best one is balanced but trained without PCA
+#### Support Vector Machine: the best one is balanced but trained without PCA
  
  <table>
   <tr>
@@ -112,7 +112,7 @@ It’s not hard to see why SVM performs better in a balanced dataset using overs
 
 We suspect the reason that SVM performs better with principal component analysis is that PCA filtered out some spatial information in the 28 features we picked that could be important to the training of SVM.
  
- #### K Nearest Neighbor: the best one is balanced and trained with PCA
+#### K Nearest Neighbor: the best one is balanced and trained with PCA
  
  <table>
   <tr>
@@ -145,3 +145,5 @@ Thus, people whoever get positive results from our model is suggested to conduct
 [HTML file](https://github.com/yuxinxu77/BST260-FinalProject/blob/main/final_project.html)
 
 [Shiny App](https://github.com/yuxinxu77/BST260-FinalProject/blob/main/BST260_final_project/app.R)
+
+
