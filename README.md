@@ -1,5 +1,5 @@
 # BST260-FinalProject - Predicting Risk of Diabetes
-### Author: Yuxin Xu, Runting Yang, Junyi Guo
+### Author: Junyi Guo, Yuxin Xu, Runting Yang
 
 ## Overview and Motivation
 Diabetes is a group of metabolic disorders characterized by a high blood sugar level over a prolonged period of time. In this project, we mainly focused on the analysis and prediction of the risks of diabetes. Our motivation for this project is: first, to find and analyze possible risk factors of diabetes, such as diet, smoking, health condition, and demographic and socioeconomic factors. Secondly, we would like to study the potential health-related influences of diabetes according to their lab test results and questionnaire answers. Finally, we would like to forecast whether an individual would develop Diabetes given the current living condition. 
